@@ -38,7 +38,7 @@ namespace Twitcher.API.Requests
                 .AddQueryParameter("broadcaster_id", broadcasterId)
                 .AddQueryParameter("id", id);
 
-            var response = await api.APIRequest<NoContentResponce>(request);
+            var response = await api.APIRequest<NoContentResponse>(request);
 
             if (response.StatusCode == HttpStatusCode.Forbidden)
                 throw new NotAvailableException();
