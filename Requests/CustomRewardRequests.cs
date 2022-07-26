@@ -66,7 +66,7 @@ public static class CustomRewardRequests
     }
 
     /// <summary>Returns a list of Custom Reward objects for the Custom Rewards on a channel.
-    /// Required scope: '<inheritdoc cref="Scopes.ChannelReadRedemptions"/>'</summary>
+    /// Required scope: '<inheritdoc cref="Scopes.ChannelReadRedemptions"/>' or '<inheritdoc cref="Scopes.ChannelManageRedemptions"/>'</summary>
     /// <param name="api">The instance of the api that should request</param>
     /// <param name="broadcasterId">Provided <paramref name="broadcasterId" /> must match the userId in the user OAuth token</param>
     /// <param name="ids">When used, this parameter filters the results and only returns reward objects for the Custom Rewards with matching ID. Maximum: 50</param>
@@ -81,7 +81,8 @@ public static class CustomRewardRequests
     /// <exception cref="NotFoundException"></exception>
     public static async Task<CustomRewardResponseBody[]?> GetCustomReward(this TwitcherAPI api, string broadcasterId, IEnumerable<Guid>? ids = null, bool onlyManageableRewards = false)
     {
-        if (api.Scopes == default || !api.Scopes.Contains(Scopes.ChannelReadRedemptions))
+        if (api.Scopes == default || (!api.Scopes.Contains(Scopes.ChannelReadRedemptions) &&
+                                      !api.Scopes.Contains(Scopes.ChannelManageRedemptions)))
             throw new ScopeRequireException(Scopes.ChannelReadRedemptions);
 
         var request = new RestRequest("helix/channel_points/custom_rewards", Method.Get)
@@ -144,7 +145,7 @@ public static class CustomRewardRequests
 
     #region Redemptions
     /// <summary>Returns Custom Reward Redemption objects for a Custom Reward on a channel that was created by the same client_id.
-    /// Required scope: '<inheritdoc cref="Scopes.ChannelReadRedemptions"/>'</summary>
+    /// Required scope: '<inheritdoc cref="Scopes.ChannelReadRedemptions"/>' or '<inheritdoc cref="Scopes.ChannelManageRedemptions"/>'</summary>
     /// <param name="api">The instance of the api that should request</param>
     /// <param name="broadcasterId">Provided <paramref name="broadcasterId" /> must match the userId in the user OAuth token</param>
     /// <param name="rewardId">When <paramref name="ids"/> is not provided, this parameter returns paginated Custom Reward Redemption objects for redemptions of the Custom Reward with ID <paramref name="rewardId"/></param>
@@ -163,8 +164,9 @@ public static class CustomRewardRequests
     /// <exception cref="NotFoundException"></exception>
     public static async Task<DataPaginationResponse<CustomRewardRedemptionResponseBody[]>?> GetCustomRewardRedemption(this TwitcherAPI api, string broadcasterId, Guid rewardId, IEnumerable<Guid>? ids = null, RedemptionStatus? status = null, SortOrder sort = SortOrder.OLDEST, int first = 20, string? after = null)
     {
-        //if (api.Scopes == default || !api.Scopes.Contains(Scopes.ChannelReadRedemptions))
-        //    throw new ScopeRequireException(Scopes.ChannelReadRedemptions);
+        if (api.Scopes == default || (!api.Scopes.Contains(Scopes.ChannelReadRedemptions) &&
+                                      !api.Scopes.Contains(Scopes.ChannelManageRedemptions)))
+            throw new ScopeRequireException(Scopes.ChannelReadRedemptions);
 
         var request = new RestRequest("helix/channel_points/custom_rewards/redemptions", Method.Get)
             .AddQueryParameter("broadcaster_id", broadcasterId)
