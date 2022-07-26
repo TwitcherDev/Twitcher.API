@@ -1,7 +1,7 @@
-﻿namespace Twitcher.API.Exceptions
+﻿namespace Twitcher.API.Exceptions;
+
+/// <summary>403 Forbidden status in response</summary>
+public class ForbiddenException : Exception
 {
-    /// <summary>Function are not available for the broadcaster</summary>
-    public class NotAvailableException : Exception
-    {
-    }
+    public ForbiddenException(string meaning) : base("403 Forbidden status in twitch response: " + meaning) { }
 }

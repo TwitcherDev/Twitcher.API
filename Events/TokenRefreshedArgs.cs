@@ -1,12 +1,12 @@
-﻿namespace Twitcher.API;
+﻿namespace Twitcher.API.Events;
 
-public class TokenCreatedArgs : EventArgs
+public class TokenRefreshedArgs : EventArgs
 {
     public string Group { get; set; }
     public string UserId { get; set; }
     public string Tokens { get; set; }
 
-    public TokenCreatedArgs(string group, string userId, string tokens)
+    public TokenRefreshedArgs(string group, string userId, string tokens)
     {
         Group = group;
         UserId = userId;

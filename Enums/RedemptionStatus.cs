@@ -1,9 +1,8 @@
-﻿namespace Twitcher.API.Enums
+﻿namespace Twitcher.API.Enums;
+
+public enum RedemptionStatus
 {
-    public enum RedemptionStatus
-    {
-        UNFULFILLED,
-        FULFILLED,
-        CANCELED
-    }
+    UNFULFILLED,
+    FULFILLED,
+    CANCELED
 }

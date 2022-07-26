@@ -1,9 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
-using RestSharp;
 using System.Net;
-using Twitcher.API.Exceptions;
-using Twitcher.API.Models.Events;
-using Twitcher.API.Models.Responses;
+using Twitcher.API.Events;
 
 namespace Twitcher.API;
 
@@ -29,13 +26,14 @@ public class TwitcherApplication
     {
         ClientId = clientId;
         ClientSecret = clientSecret;
-        _idClient = new RestClient("https://id.twitch.tv");
-        _apiClient = new RestClient("https://api.twitch.tv");
+        _idClient = new RestClient("https://id.twitch.tv").UseSerializer<JsonSnakeSerializer>();
+        _apiClient = new RestClient("https://api.twitch.tv").UseSerializer<JsonSnakeSerializer>();
         _authStates = new List<string>();
         _apis = new List<(string prefix, string userId, TwitcherAPI api)>();
         _cancellationToken = token;
     }
 
+    public string GenerateAuthorizeLink(string redirectUri, IEnumerable<string> scopes) => GenerateAuthorizeLink(redirectUri, string.Join(' ', scopes));
     public string GenerateAuthorizeLink(string redirectUri, string scopes)
     {
         return $"https://id.twitch.tv/oauth2/authorize?response_type=code&client_id={ClientId}&redirect_uri={redirectUri}&scope={scopes}";
@@ -49,6 +47,7 @@ public class TwitcherApplication
         return state;
     }
 
+    public string GenerateUniqueAuthorizeLink(string redirectUri, IEnumerable<string> scopes) => GenerateUniqueAuthorizeLink(redirectUri, string.Join(' ', scopes));
     public string GenerateUniqueAuthorizeLink(string redirectUri, string scopes)
     {
         var state = GenerateUniqueState();
@@ -89,7 +88,7 @@ public class TwitcherApplication
             .AddQueryParameter("code", code)
             .AddQueryParameter("redirect_uri", redirectUri);
 
-        var response = await _idClient.ExecuteAsync<AuthorizationCodeResponse>(request);
+        var response = await _idClient.ExecuteAsync<AuthorizationCodeResponseBody>(request);
         Logger?.LogTrace("Token response {status}: {content}", response.StatusCode, response.Content);
 
         if (response.StatusCode == HttpStatusCode.BadRequest)

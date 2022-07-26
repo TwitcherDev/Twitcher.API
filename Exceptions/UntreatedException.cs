@@ -1,6 +1,5 @@
-﻿namespace Twitcher.API.Exceptions
+﻿namespace Twitcher.API.Exceptions;
+
+public class UntreatedException : Exception
 {
-    public class UntreatedException : Exception
-    {
-    }
 }

@@ -1,4 +1,4 @@
-﻿namespace Twitcher.API.Models.Events;
+﻿namespace Twitcher.API.Events;
 
 public class TokenDeadArgs : EventArgs
 {

@@ -1,31 +1,52 @@
-﻿using RestSharp;
-using Twitcher.API.Exceptions;
-using Twitcher.API.Models.Responses;
-
-namespace Twitcher.API.Requests;
+﻿namespace Twitcher.API.Requests;
 
 public static class StreamRequests
 {
-    /// <exception cref="BadRequestException"></exception>
+    /// <summary>Gets information about active streams. Streams are returned sorted by number of current viewers, in descending order</summary>
+    /// <param name="api">The instance of the api that should request</param>
+    /// <param name="gameIds">Returns streams broadcasting a specified game ID. You can specify up to 100 IDs</param>
+    /// <param name="languages">Stream language. You can specify up to 100 languages. A language value must be either the ISO 639-1 two-letter code</param>
+    /// <param name="userIds">Returns streams broadcast by one or more specified user IDs. You can specify up to 100 IDs</param>
+    /// <param name="userLogins">Returns streams broadcast by one or more specified user login names. You can specify up to 100 names</param>
+    /// <param name="first">Maximum number of objects to return. Maximum: 100</param>
+    /// <param name="after">Cursor for forward pagination</param>
+    /// <param name="before">Cursor for backward pagination</param>
+    /// <returns>Response</returns>
+    /// <exception cref="NotValidatedException"></exception>
     /// <exception cref="DeadTokenException"></exception>
+    /// <exception cref="BadRequestException"></exception>
     /// <exception cref="InternalServerException"></exception>
-    public static async Task<StreamResponse[]?> GetStreams(this TwitcherAPI api, int first = 20, IEnumerable<string>? userIds = null, IEnumerable<string>? userLogins = null)
+    public static async Task<DataPaginationResponse<StreamResponseBody[]>?> GetStreams(this TwitcherAPI api, IEnumerable<string>? gameIds = null, IEnumerable<string>? languages = null, IEnumerable<string>? userIds = null, IEnumerable<string>? userLogins = null, int first = 20, string? after = null, string? before = null)
     {
         var request = new RestRequest("helix/streams", Method.Get);
 
-        if (first != 20)
-            request.AddQueryParameter("first", first);
+        if (gameIds != null)
+            foreach (var id in gameIds)
+                request.AddQueryParameter("game_id", id);
+
+        if (languages != null)
+            foreach (var id in languages)
+                request.AddQueryParameter("language", id);
 
         if (userIds != null)
             foreach (var id in userIds)
                 request.AddQueryParameter("user_id", id);
 
         if (userLogins != null)
-            foreach (var login in userLogins)
-                request.AddQueryParameter("user_login", login);
+            foreach (var id in userLogins)
+                request.AddQueryParameter("user_login", id);
 
-        var response = await api.APIRequest<DataResponse<StreamResponse[]>>(request);
+        if (first != 20)
+            request.AddQueryParameter("first", first);
 
-        return response.Data?.Data;
+        if (after != null)
+            request.AddQueryParameter("after", after);
+
+        if (before != null)
+            request.AddQueryParameter("before", before);
+
+        var response = await api.APIRequest<DataPaginationResponse<StreamResponseBody[]>>(request);
+
+        return response.Data;
     }
 }
