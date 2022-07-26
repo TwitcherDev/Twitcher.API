@@ -28,6 +28,13 @@ public class TwitcherAPI
     /// <summary>Logger</summary>
     public ILogger? Logger { get; set; }
 
+    public bool IsRefreshed { get; private set; } = false;
+    public string SaveTokens()
+    {
+        IsRefreshed = false;
+        return AccessToken + ':' + RefreshToken;
+    }
+
     public event EventHandler<APITokenRefreshedArgs>? TokenRefreshed;
     public event EventHandler? TokenDead;
 
@@ -91,8 +98,9 @@ public class TwitcherAPI
             RefreshToken = response.Data.RefreshToken;
             Scopes = response.Data.Scopes;
             ExpiresIn = DateTime.UtcNow.AddSeconds(response.Data.ExpiresIn);
-            TokenRefreshed?.Invoke(this, new APITokenRefreshedArgs(AccessToken + ':' + RefreshToken));
+            IsRefreshed = true;
             _isValidated = true;
+            TokenRefreshed?.Invoke(this, new APITokenRefreshedArgs(AccessToken + ':' + RefreshToken));
             Logger?.LogDebug("User '{id}' token refreshed", UserId);
         }
 

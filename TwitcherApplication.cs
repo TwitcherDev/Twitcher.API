@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using System.Net;
 using Twitcher.API.Events;
 
 namespace Twitcher.API;
@@ -10,7 +9,7 @@ public class TwitcherApplication
     private readonly RestClient _apiClient;
 
     private readonly List<string> _authStates;
-    private readonly List<(string group, string userId, TwitcherAPI api)> _apis;
+    private readonly List<(string tag, string userId, TwitcherAPI api)> _apis;
 
     private readonly CancellationToken _cancellationToken;
 
@@ -57,7 +56,7 @@ public class TwitcherApplication
     private static string GenerateState(int length) => new(Enumerable.Range(0, length).Select(e => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Random.Shared.Next(62)]).ToArray());
 
     /// <summary></summary>
-    /// <param name="group"></param>
+    /// <param name="tag"></param>
     /// <param name="code"></param>
     /// <param name="redirectUri"></param>
     /// <param name="state"></param>
@@ -66,20 +65,20 @@ public class TwitcherApplication
     /// <exception cref="BadRequestException"></exception>
     /// <exception cref="DeadTokenException"></exception>
     /// <exception cref="InternalServerException"></exception>
-    public Task<string?> CreateAPI(string group, string code, string redirectUri, string state)
+    public Task<string?> CreateAPI(string tag, string code, string redirectUri, string state)
     {
         if (!_authStates.Remove(state))
             throw new WrongStateException();
         Logger?.LogTrace("State validated: {state}", state);
 
-        return CreateAPI(group, code, redirectUri);
+        return CreateAPI(tag, code, redirectUri);
     }
 
     /// <exception cref="BadRequestException"></exception>
     /// <exception cref="DeadTokenException"></exception>
     /// <exception cref="InternalServerException"></exception>
     /// <returns>userId if successful; otherwise, null</returns>
-    public async Task<string?> CreateAPI(string group, string code, string redirectUri)
+    public async Task<string?> CreateAPI(string tag, string code, string redirectUri)
     {
         var request = new RestRequest("oauth2/token", Method.Post)
             .AddQueryParameter("grant_type", "authorization_code")
@@ -104,81 +103,77 @@ public class TwitcherApplication
 
         var tokens = response.Data.AccessToken + ':' + response.Data.RefreshToken;
 
-        var userId = await RegisterAPI(group, tokens);
+        var userId = await RegisterAPI(tag, tokens);
         if (string.IsNullOrEmpty(userId))
             return null;
 
-        TokenCreated?.Invoke(this, new TokenCreatedArgs(group, userId, tokens));
-        Logger?.LogDebug("User '{userId}' ('{group}') token created", userId, group);
+        TokenCreated?.Invoke(this, new TokenCreatedArgs(tag, userId, tokens));
+        Logger?.LogDebug("User '{userId}' ('{tag}') token created", userId, tag);
         return userId;
     }
 
     /// <summary></summary>
-    /// <param name="group"></param>
+    /// <param name="tag"></param>
     /// <param name="tokens"></param>
     /// <returns></returns>
     /// <exception cref="DeadTokenException"></exception>
     /// <exception cref="InternalServerException"></exception>
-    public async Task<string?> RegisterAPI(string group, string tokens, string? userId = default)
+    public async Task<string?> RegisterAPI(string tag, string tokens, string? userId = default)
     {
         var api = new TwitcherAPI(tokens, ClientId, ClientSecret, _idClient, _apiClient, userId) { Logger = Logger };
-        api.TokenRefreshed += (s, e) => Api_TokenRefreshed(group, (TwitcherAPI?)s, e.Tokens);
-        api.TokenDead += (s, e) => Api_TokenDead(group, (TwitcherAPI?)s);
+        api.TokenRefreshed += (s, e) => Api_TokenRefreshed(tag, (TwitcherAPI?)s, e.Tokens);
+        api.TokenDead += (s, e) => Api_TokenDead(tag, (TwitcherAPI?)s);
 
         var response = await api.Validate();
         if (string.IsNullOrEmpty(response?.UserId))
             return null;
 
-        _apis.Add((group, response.UserId, api));
+        _apis.Add((tag, response.UserId, api));
 
         return response?.UserId;
     }
 
-    private void Api_TokenRefreshed(string group, TwitcherAPI? api, string tokens)
+    private void Api_TokenRefreshed(string tag, TwitcherAPI? api, string tokens)
     {
         if (api == default || string.IsNullOrEmpty(api.UserId))
             return;
-        TokenRefreshed?.Invoke(this, new TokenRefreshedArgs(group, api.UserId, tokens));
-        Logger?.LogDebug("User '{userId}' ('{group}') token refreshed", api.UserId, group);
+        TokenRefreshed?.Invoke(this, new TokenRefreshedArgs(tag, api.UserId, tokens));
+        Logger?.LogDebug("User '{userId}' ('{tag}') token refreshed", api.UserId, tag);
     }
 
-    private void Api_TokenDead(string group, TwitcherAPI? api)
+    private void Api_TokenDead(string tag, TwitcherAPI? api)
     {
         if (api == default)
             return;
-        TokenDead?.Invoke(this, new TokenDeadArgs(group, api.UserId));
-        Logger?.LogDebug("User '{userId}' ('{group}') token dead", api.UserId, group);
+        TokenDead?.Invoke(this, new TokenDeadArgs(tag, api.UserId));
+        Logger?.LogDebug("User '{userId}' ('{tag}') token dead", api.UserId, tag);
         if (string.IsNullOrEmpty(api.UserId))
             return;
-        _apis.Remove((group, api.UserId, api));
+        _apis.Remove((tag, api.UserId, api));
     }
 
-    public IEnumerable<(string userId, TwitcherAPI api)> GetGroup(string group) => _apis.Where(a => a.group == group).Select(a => (a.userId, a.api));
+    public IEnumerable<(string userId, TwitcherAPI api)> GetAPIsByTag(string tag) => _apis.Where(a => a.tag == tag).Select(a => (a.userId, a.api));
 
-    public TwitcherAPI? GetAPI(string group, string userId) => _apis.FirstOrDefault(a => a.group == group && a.userId == userId).api;
+    public TwitcherAPI? GetAPI(string tag, string userId) => _apis.FirstOrDefault(a => a.tag == tag && a.userId == userId).api;
 
-    public int RemoveGroup(string group)
+    public int RemoveAPIsByTag(string tag)
     {
         var count = 0;
-        foreach (var (_, userId, api) in _apis.Where(a => a.group == group))
+        foreach (var (_, userId, api) in _apis.Where(a => a.tag == tag))
         {
-            _apis.Remove((group, userId, api));
-            api.TokenRefreshed -= (s, e) => Api_TokenRefreshed(group, (TwitcherAPI?)s, e.Tokens);
-            api.TokenDead -= (s, e) => Api_TokenDead(group, (TwitcherAPI?)s);
+            _apis.Remove((tag, userId, api));
             count += 1;
         }
         return count;
     }
 
-    public bool RemoveAPI(string group, string userId)
+    public bool RemoveAPI(string tag, string userId)
     {
-        var api = _apis.FirstOrDefault(a => a.group == group && a.userId == userId).api;
+        var api = _apis.FirstOrDefault(a => a.tag == tag && a.userId == userId).api;
         if (api == default)
             return false;
 
-        _apis.Remove((group, userId, api));
-        api.TokenRefreshed -=  (s, e) => Api_TokenRefreshed(group, (TwitcherAPI?)s, e.Tokens);
-        api.TokenDead -= (s, e) => Api_TokenDead(group, (TwitcherAPI?)s);
+        _apis.Remove((tag, userId, api));
         return true;
     }
 
