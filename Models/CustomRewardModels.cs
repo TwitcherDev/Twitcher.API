@@ -14,11 +14,11 @@
 /// <param name="IsGlobalCooldownEnabled">Whether a cooldown is enabled</param>
 /// <param name="GlobalCooldownSeconds">The cooldown in seconds if enabled</param>
 /// <param name="ShouldRedemptionsSkipRequestQueue">Should redemptions be set to <see cref="RedemptionStatus.FULFILLED" /> status immediately when redeemed and skip the request queue instead of the normal <see cref="RedemptionStatus.UNFULFILLED" /> status</param>
-public record CustomRewardRequestBody(string? Title = null, int Cost = default, string? Prompt = null, [property: DefaultValue(false)] bool IsEnabled = true, string? BackgroundColor = null, bool IsUserInputRequired = false,
-    bool IsMaxPerStreamEnabled = false, int MaxPerStream = default,
-    bool IsMaxPerUserPerStreamEnabled = false, int MaxPerUserPerStream = default,
-    bool IsGlobalCooldownEnabled = false, int GlobalCooldownSeconds = default,
-    bool ShouldRedemptionsSkipRequestQueue = false);
+public record CustomRewardRequestBody(string? Title = null, int Cost = default, string? Prompt = null, bool? IsEnabled = null, string? BackgroundColor = null, bool? IsUserInputRequired = null,
+    bool? IsMaxPerStreamEnabled = null, int MaxPerStream = default,
+    bool? IsMaxPerUserPerStreamEnabled = null, int MaxPerUserPerStream = default,
+    bool? IsGlobalCooldownEnabled = null, int GlobalCooldownSeconds = default,
+    bool? ShouldRedemptionsSkipRequestQueue = null);
 
 /// <param name="BroadcasterId">ID of the channel the reward is for</param>
 /// <param name="BroadcasterLogin">Broadcaster user login name</param>
