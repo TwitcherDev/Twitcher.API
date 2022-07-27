@@ -156,16 +156,7 @@ public class TwitcherApplication
 
     public TwitcherAPI? GetAPI(string tag, string userId) => _apis.FirstOrDefault(a => a.tag == tag && a.userId == userId).api;
 
-    public int RemoveAPIsByTag(string tag)
-    {
-        var count = 0;
-        foreach (var (_, userId, api) in _apis.Where(a => a.tag == tag))
-        {
-            _apis.Remove((tag, userId, api));
-            count += 1;
-        }
-        return count;
-    }
+    public int RemoveAPIsByTag(string tag) => _apis.RemoveAll(a => a.tag == tag);
 
     public bool RemoveAPI(string tag, string userId)
     {
