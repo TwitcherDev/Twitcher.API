@@ -28,9 +28,6 @@ public static class CommercialRequests
     /// <exception cref="InternalServerException"></exception>
     public static async Task<StartCommercialResponse?> StartCommercial(this TwitcherAPI api, StartCommercialRequestBody body)
     {
-        if (api.Scopes == default || !api.Scopes.Contains(Scopes.ChannelEditCommercial))
-            throw new ScopeRequireException(Scopes.ChannelEditCommercial);
-
         var request = new RestRequest("helix/channels/commercial", Method.Post)
             .AddBody(body);
 

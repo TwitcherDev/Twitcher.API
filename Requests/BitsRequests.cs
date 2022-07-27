@@ -17,9 +17,6 @@ public static class BitsRequests
     /// <exception cref="InternalServerException"></exception>
     public static async Task<BitsLeaderboardResponse?> GetBitsLeaderboard(this TwitcherAPI api, string? userId = null, int count = 10, LeaderboardTimePeriod period = LeaderboardTimePeriod.All, DateTime startedAt = default)
     {
-        if (api.Scopes == default || !api.Scopes.Contains(Scopes.BitsRead))
-            throw new ScopeRequireException(Scopes.BitsRead);
-
         var request = new RestRequest("helix/bits/leaderboard", Method.Get);
 
         if (userId != default)

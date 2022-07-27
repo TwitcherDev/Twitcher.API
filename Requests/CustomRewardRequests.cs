@@ -17,9 +17,6 @@ public static class CustomRewardRequests
     /// <exception cref="ForbiddenException"></exception>
     public static async Task<CustomRewardResponseBody?> CreateCustomReward(this TwitcherAPI api, string broadcasterId, CustomRewardRequestBody body)
     {
-        if (api.Scopes == default || !api.Scopes.Contains(Scopes.ChannelManageRedemptions))
-            throw new ScopeRequireException(Scopes.ChannelManageRedemptions);
-
         var request = new RestRequest("helix/channel_points/custom_rewards", Method.Post)
             .AddQueryParameter("broadcaster_id", broadcasterId)
             .AddBody(body);
@@ -47,9 +44,6 @@ public static class CustomRewardRequests
     /// <exception cref="NotFoundException"></exception>
     public static async Task<bool> DeleteCustomReward(this TwitcherAPI api, string broadcasterId, Guid id)
     {
-        if (api.Scopes == default || !api.Scopes.Contains(Scopes.ChannelManageRedemptions))
-            throw new ScopeRequireException(Scopes.ChannelManageRedemptions);
-
         var request = new RestRequest("helix/channel_points/custom_rewards", Method.Delete)
             .AddQueryParameter("broadcaster_id", broadcasterId)
             .AddQueryParameter("id", id);
@@ -81,10 +75,6 @@ public static class CustomRewardRequests
     /// <exception cref="NotFoundException"></exception>
     public static async Task<CustomRewardResponseBody[]?> GetCustomReward(this TwitcherAPI api, string broadcasterId, IEnumerable<Guid>? ids = null, bool onlyManageableRewards = false)
     {
-        if (api.Scopes == default || (!api.Scopes.Contains(Scopes.ChannelReadRedemptions) &&
-                                      !api.Scopes.Contains(Scopes.ChannelManageRedemptions)))
-            throw new ScopeRequireException(Scopes.ChannelReadRedemptions);
-
         var request = new RestRequest("helix/channel_points/custom_rewards", Method.Get)
             .AddQueryParameter("broadcaster_id", broadcasterId);
 
@@ -122,9 +112,6 @@ public static class CustomRewardRequests
     /// <exception cref="NotFoundException"></exception>
     public static async Task<CustomRewardResponseBody?> UpdateCustomReward(this TwitcherAPI api, string broadcasterId, Guid id, CustomRewardRequestBody body)
     {
-        if (api.Scopes == default || !api.Scopes.Contains(Scopes.ChannelManageRedemptions))
-            throw new ScopeRequireException(Scopes.ChannelManageRedemptions);
-
         var request = new RestRequest("helix/channel_points/custom_rewards", Method.Patch)
             .AddQueryParameter("broadcaster_id", broadcasterId)
             .AddQueryParameter("id", id)
@@ -164,10 +151,6 @@ public static class CustomRewardRequests
     /// <exception cref="NotFoundException"></exception>
     public static async Task<DataPaginationResponse<CustomRewardRedemptionResponseBody[]>?> GetCustomRewardRedemption(this TwitcherAPI api, string broadcasterId, Guid rewardId, IEnumerable<Guid>? ids = null, RedemptionStatus? status = null, SortOrder sort = SortOrder.OLDEST, int first = 20, string? after = null)
     {
-        if (api.Scopes == default || (!api.Scopes.Contains(Scopes.ChannelReadRedemptions) &&
-                                      !api.Scopes.Contains(Scopes.ChannelManageRedemptions)))
-            throw new ScopeRequireException(Scopes.ChannelReadRedemptions);
-
         var request = new RestRequest("helix/channel_points/custom_rewards/redemptions", Method.Get)
             .AddQueryParameter("broadcaster_id", broadcasterId)
             .AddQueryParameter("reward_id", rewardId);
@@ -216,9 +199,6 @@ public static class CustomRewardRequests
     /// <exception cref="NotFoundException"></exception>
     public static async Task<bool> UpdateRedemptionStatus(this TwitcherAPI api, string broadcasterId, Guid rewardId, IEnumerable<Guid> ids, RedemptionStatus status)
     {
-        if (api.Scopes == default || !api.Scopes.Contains(Scopes.ChannelManageRedemptions))
-            throw new ScopeRequireException(Scopes.ChannelManageRedemptions);
-
         var request = new RestRequest("helix/channel_points/custom_rewards/redemptions", Method.Get)
             .AddQueryParameter("broadcaster_id", broadcasterId)
             .AddQueryParameter("reward_id", rewardId)

@@ -40,9 +40,6 @@ public static class UserRequests
     /// <exception cref="InternalServerException"></exception>
     public static async Task<UserResponse?> UpdateUser(this TwitcherAPI api, string? description = null)
     {
-        if (api.Scopes == default || !api.Scopes.Contains(Scopes.UserEdit))
-            throw new ScopeRequireException(Scopes.UserEdit);
-
         var request = new RestRequest("helix/users", Method.Put);
 
         if (description != null)
@@ -95,8 +92,6 @@ public static class UserRequests
     public static async Task<UserResponse?> GetUserBlockList(this TwitcherAPI api, string? description = null)
     {
         throw new NotImplementedException();
-        if (api.Scopes == default || !api.Scopes.Contains(Scopes.UserEdit))
-            throw new ScopeRequireException(Scopes.UserEdit);
 
         var request = new RestRequest("helix/users", Method.Put);
 

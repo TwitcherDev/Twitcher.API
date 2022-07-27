@@ -21,9 +21,6 @@ public static class AnalyticsRequests
     /// <exception cref="InternalServerException"></exception>
     public static async Task<DataPaginationResponse<ExtensionAnalyticsResponse[]>?> GetExtensionAnalytics(this TwitcherAPI api, int first = 20, string? after = null, DateTime startedAt = default, DateTime endedAt = default)
     {
-        if (api.Scopes == default || !api.Scopes.Contains(Scopes.AnalyticsReadExtensions))
-            throw new ScopeRequireException(Scopes.AnalyticsReadExtensions);
-
         var request = new RestRequest("helix/analytics/extensions", Method.Get)
             .AddQueryParameter("type", "overview_v2");
 
@@ -58,9 +55,6 @@ public static class AnalyticsRequests
     /// <exception cref="InternalServerException"></exception>
     public static async Task<ExtensionAnalyticsResponse?> GetExtensionAnalytics(this TwitcherAPI api, string extensionId, DateTime startedAt = default, DateTime endedAt = default)
     {
-        if (api.Scopes == default || !api.Scopes.Contains(Scopes.AnalyticsReadExtensions))
-            throw new ScopeRequireException(Scopes.AnalyticsReadExtensions);
-
         var request = new RestRequest("helix/analytics/extensions", Method.Get)
             .AddQueryParameter("extension_id", extensionId)
             .AddQueryParameter("type", "overview_v2");
@@ -93,9 +87,6 @@ public static class AnalyticsRequests
     /// <exception cref="InternalServerException"></exception>
     public static async Task<DataPaginationResponse<GameAnalyticsResponse[]>?> GetGameAnalytics(this TwitcherAPI api, int first = 20, string? after = null, DateTime startedAt = default, DateTime endedAt = default)
     {
-        if (api.Scopes == default || !api.Scopes.Contains(Scopes.AnalyticsReadGames))
-            throw new ScopeRequireException(Scopes.AnalyticsReadGames);
-
         var request = new RestRequest("helix/analytics/games", Method.Get)
             .AddQueryParameter("type", "overview_v2");
 
@@ -130,9 +121,6 @@ public static class AnalyticsRequests
     /// <exception cref="InternalServerException"></exception>
     public static async Task<GameAnalyticsResponse?> GetGameAnalytics(this TwitcherAPI api, string gameId, DateTime startedAt = default, DateTime endedAt = default)
     {
-        if (api.Scopes == default || !api.Scopes.Contains(Scopes.AnalyticsReadGames))
-            throw new ScopeRequireException(Scopes.AnalyticsReadGames);
-
         var request = new RestRequest("helix/analytics/games", Method.Get)
             .AddQueryParameter("game_id", gameId)
             .AddQueryParameter("type", "overview_v2");
