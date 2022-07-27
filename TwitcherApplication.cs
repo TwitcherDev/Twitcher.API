@@ -128,6 +128,7 @@ public class TwitcherApplication
         if (string.IsNullOrEmpty(response?.UserId))
             return null;
 
+        RemoveAPI(tag, response.UserId);
         _apis.Add((tag, response.UserId, api));
 
         return response?.UserId;
