@@ -2,13 +2,13 @@
 
 public class TokenRefreshedArgs : EventArgs
 {
-    public string Group { get; set; }
+    public string? Tag { get; set; }
     public string UserId { get; set; }
     public string Tokens { get; set; }
 
-    public TokenRefreshedArgs(string group, string userId, string tokens)
+    public TokenRefreshedArgs(string? tag, string userId, string tokens)
     {
-        Group = group;
+        Tag = tag;
         UserId = userId;
         Tokens = tokens;
     }

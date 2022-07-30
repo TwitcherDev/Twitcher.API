@@ -2,7 +2,8 @@
 
 public enum RedemptionStatus
 {
-    UNFULFILLED,
-    FULFILLED,
-    CANCELED
+    Unfulfilled,
+    Fulfilled,
+    Canceled,
+    TestUpper
 }

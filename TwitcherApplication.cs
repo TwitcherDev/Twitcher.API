@@ -3,192 +3,195 @@ using Twitcher.API.Events;
 
 namespace Twitcher.API;
 
+/// <summary>Class for managing and grouping TwitchAPI instances in the application</summary>
 public class TwitcherApplication
 {
-    private readonly RestClient _idClient;
-    private readonly RestClient _apiClient;
+    private readonly List<(string? tag, string userId, TwitcherAPI api)> _apis;
+    private readonly ILoggerFactory? _loggerFactory;
+    private readonly ILogger? _logger;
 
-    private readonly List<string> _authStates;
-    private readonly List<(string tag, string userId, TwitcherAPI api)> _apis;
+    private StateCollection? _states;
 
-    private readonly CancellationToken _cancellationToken;
-
+    /// <param name="clientId">Id of the application</param>
     public string ClientId { get; }
+    /// <param name="clientSecret">Secret of the application</param>
     public string ClientSecret { get; }
-    public ILogger? Logger { get; set; }
 
-    public event EventHandler<TokenCreatedArgs>? TokenCreated;
+    /// <summary>Invoked when the token of one of the api has been changed</summary>
     public event EventHandler<TokenRefreshedArgs>? TokenRefreshed;
-    public event EventHandler<TokenDeadArgs>? TokenDead;
 
-    public TwitcherApplication(string clientId, string clientSecret, CancellationToken token = default)
+    /// <summary>Create an instance of TwitcherApplication</summary>
+    /// <param name="clientId">Id of the application</param>
+    /// <param name="clientSecret">Secret of the application</param>
+    /// <param name="loggerFactory">ILoggerFactory for logging</param>
+    public TwitcherApplication(string clientId, string clientSecret, ILoggerFactory? loggerFactory = null)
     {
+        _loggerFactory = loggerFactory;
+        if (_loggerFactory != default)
+            _logger = _loggerFactory.CreateLogger<TwitcherApplication>();
+
         ClientId = clientId;
         ClientSecret = clientSecret;
-        _idClient = new RestClient("https://id.twitch.tv").UseSerializer<JsonSnakeSerializer>();
-        _apiClient = new RestClient("https://api.twitch.tv").UseSerializer<JsonSnakeSerializer>();
-        _authStates = new List<string>();
-        _apis = new List<(string prefix, string userId, TwitcherAPI api)>();
-        _cancellationToken = token;
+        _apis = new List<(string? tag, string userId, TwitcherAPI api)>();
     }
 
-    public string GenerateAuthorizeLink(string redirectUri, IEnumerable<string> scopes) => GenerateAuthorizeLink(redirectUri, string.Join(' ', scopes));
-    public string GenerateAuthorizeLink(string redirectUri, string scopes)
+    /// <summary>Enable GenerateState, adds a randomly generated state to GenerateAuthorizeLink and a check to CreateAPI</summary>
+    /// <param name="stateLiveTime">Lifetime of all state, default: 24 hours</param>
+    /// <param name="statesLimit">Maximum number of unused states, default: 1000</param>
+    /// <param name="stateLength">Length of all states, dafault: 32</param>
+    public void UseAuthorizeStates(TimeSpan? stateLiveTime = default, int statesLimit = 1000, int stateLength = 32)
     {
-        return $"https://id.twitch.tv/oauth2/authorize?response_type=code&client_id={ClientId}&redirect_uri={redirectUri}&scope={scopes}";
+        _states = new StateCollection(stateLiveTime ?? TimeSpan.FromHours(24), statesLimit, stateLength);
     }
 
-    public string GenerateUniqueState()
+    /// <summary>Generate randomly state for secure authorization. Call <see cref="UseAuthorizeStates"/> to enable</summary>
+    /// <returns>New state</returns>
+    /// <exception cref="NullReferenceException"></exception>
+    public string GenerateState()
     {
-        var state = GenerateState(32);
-        _authStates.Add(state);
-        Logger?.LogTrace("Generate state: {state}", state);
+        if (_states == default)
+            throw new NullReferenceException("You cannot use GenerateState without UseAuthorizeStates");
+        var state = _states.CreateState();
+        _logger?.LogTrace("State created: {state}", state);
         return state;
     }
 
-    public string GenerateUniqueAuthorizeLink(string redirectUri, IEnumerable<string> scopes) => GenerateUniqueAuthorizeLink(redirectUri, string.Join(' ', scopes));
-    public string GenerateUniqueAuthorizeLink(string redirectUri, string scopes)
+    /// <summary>Creates a link to generate a new token using Authorization code grant flow. Adds state, if <see cref="UseAuthorizeStates"/> was called</summary>
+    /// <param name="redirectUri">Redirect uri</param>
+    /// <param name="scopes">Scopes</param>
+    /// <returns>Created uri</returns>
+    public string GenerateAuthorizeLink(string redirectUri, IEnumerable<string> scopes) => GenerateAuthorizeLink(redirectUri, string.Join(' ', scopes));
+
+    /// <summary>Creates a link to generate a new token using Authorization code grant flow. Adds state, if <see cref="UseAuthorizeStates"/> was called</summary>
+    /// <param name="redirectUri">Redirect uri</param>
+    /// <param name="scopes">Scopes separated by a space</param>
+    /// <returns>Created uri</returns>
+    public string GenerateAuthorizeLink(string redirectUri, string scopes)
     {
-        var state = GenerateUniqueState();
-        return $"https://id.twitch.tv/oauth2/authorize?response_type=code&client_id={ClientId}&redirect_uri={redirectUri}&scope={scopes}&state={state}";
+        if (_states != null)
+            return $"https://id.twitch.tv/oauth2/authorize?response_type=code&client_id={ClientId}&redirect_uri={redirectUri}&scope={scopes}&state={GenerateState()}";
+        return $"https://id.twitch.tv/oauth2/authorize?response_type=code&client_id={ClientId}&redirect_uri={redirectUri}&scope={scopes}";
     }
 
-    private static string GenerateState(int length) => new(Enumerable.Range(0, length).Select(e => "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Random.Shared.Next(62)]).ToArray());
-
-    /// <summary></summary>
-    /// <param name="tag"></param>
-    /// <param name="code"></param>
-    /// <param name="redirectUri"></param>
-    /// <param name="state"></param>
-    /// <returns>userId if successful; otherwise, null</returns>
+    /// <summary>Using authorization code grant flow with state for generate new token</summary>
+    /// <param name="code">Code</param>
+    /// <param name="redirectUri">Redirect uri</param>
+    /// <param name="state">State that was generated by this application</param>
+    /// <param name="tag">Tag for grouping apis</param>
+    /// <returns>Instance of TwitchAPI created from the received token</returns>
     /// <exception cref="WrongStateException"></exception>
-    /// <exception cref="BadRequestException"></exception>
-    /// <exception cref="DeadTokenException"></exception>
-    /// <exception cref="InternalServerException"></exception>
-    public Task<string?> CreateAPI(string tag, string code, string redirectUri, string state)
+    /// <exception cref="TwitchErrorException"></exception>
+    public Task<TwitcherAPI> CreateAPI(string code, string redirectUri, string state, string? tag = null)
     {
-        if (!_authStates.Remove(state))
+        if (_states == default)
+            throw new NullReferenceException("You cannot use CreateAPI with state without UseAuthorizeStates");
+
+        if (!_states.PassingState(state))
+        {
+            _logger?.LogTrace("Wrong state: {state}", state);
             throw new WrongStateException();
-        Logger?.LogTrace("State validated: {state}", state);
+        }
 
-        return CreateAPI(tag, code, redirectUri);
+        _logger?.LogTrace("State validated: {state}", state);
+
+        return CreateAPI(code, redirectUri, tag);
     }
 
-    /// <exception cref="BadRequestException"></exception>
-    /// <exception cref="DeadTokenException"></exception>
-    /// <exception cref="InternalServerException"></exception>
-    /// <returns>userId if successful; otherwise, null</returns>
-    public async Task<string?> CreateAPI(string tag, string code, string redirectUri)
+
+    /// <summary>Using authorization code grant flow for generate new token</summary>
+    /// <param name="code">Code</param>
+    /// <param name="redirectUri">Redirect uri</param>
+    /// <param name="tag">Tag for grouping apis</param>
+    /// <returns>Instance of TwitchAPI created from the received token</returns>
+    /// <exception cref="WrongStateException"></exception>
+    /// <exception cref="TwitchErrorException"></exception>
+    public async Task<TwitcherAPI> CreateAPI(string code, string redirectUri, string? tag = null)
     {
-        var request = new RestRequest("oauth2/token", Method.Post)
-            .AddQueryParameter("grant_type", "authorization_code")
-            .AddQueryParameter("client_id", ClientId)
-            .AddQueryParameter("client_secret", ClientSecret)
-            .AddQueryParameter("code", code)
-            .AddQueryParameter("redirect_uri", redirectUri);
-
-        var response = await _idClient.ExecuteAsync<AuthorizationCodeResponseBody>(request);
-        Logger?.LogTrace("Token response {status}: {content}", response.StatusCode, response.Content);
-
-        if (response.StatusCode == HttpStatusCode.BadRequest)
-            throw new BadRequestException();
-
-        if (response.StatusCode == HttpStatusCode.InternalServerError)
-            throw new InternalServerException();
-
-        if (response.Data == default ||
-            string.IsNullOrEmpty(response.Data.AccessToken) ||
-            string.IsNullOrEmpty(response.Data.RefreshToken))
-            return null;
-
-        var tokens = response.Data.AccessToken + ':' + response.Data.RefreshToken;
-
-        var userId = await RegisterAPI(tag, tokens);
-        if (string.IsNullOrEmpty(userId))
-            return null;
-
-        TokenCreated?.Invoke(this, new TokenCreatedArgs(tag, userId, tokens));
-        Logger?.LogDebug("User '{userId}' ('{tag}') token created", userId, tag);
-        return userId;
+        var api = await TwitcherAPI.AuthorizeCode(code, redirectUri, ClientId, ClientSecret, _loggerFactory?.CreateLogger<TwitcherAPI>());
+        await AddAPI(api, tag);
+        return api;
     }
 
-    /// <summary></summary>
-    /// <param name="tag"></param>
-    /// <param name="tokens"></param>
-    /// <returns></returns>
-    /// <exception cref="DeadTokenException"></exception>
-    /// <exception cref="InternalServerException"></exception>
-    public async Task<string?> RegisterAPI(string tag, string tokens, string? userId = default)
+    /// <summary>Create an instance of TwitcherAPI using tokens and add it to to the application</summary>
+    /// <param name="tokens">Access and refresh tokens in 'access:refresh' format</param>
+    /// <param name="tag">Tag for grouping apis</param>
+    /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="TwitchErrorException"></exception>
+    public async Task<TwitcherAPI> AddAPI(string tokens, string? tag = null)
     {
-        var api = new TwitcherAPI(tokens, ClientId, ClientSecret, _idClient, _apiClient, userId) { Logger = Logger };
+        var api = new TwitcherAPI(tokens, ClientId, ClientSecret) { Logger = _loggerFactory?.CreateLogger<TwitcherAPI>() };
+        await AddAPI(api, tag);
+        return api;
+    }
+
+    /// <summary>Adds an <paramref name="api"/> to the application</summary>
+    /// <param name="api">Api</param>
+    /// <param name="tag">Tag for grouping apis</param>
+    /// <exception cref="TwitchErrorException"></exception>
+    public async Task AddAPI(TwitcherAPI api, string? tag = null)
+    {
         api.TokenRefreshed += (s, e) => Api_TokenRefreshed(tag, (TwitcherAPI?)s, e.Tokens);
-        api.TokenDead += (s, e) => Api_TokenDead(tag, (TwitcherAPI?)s);
 
         var response = await api.Validate();
-        if (string.IsNullOrEmpty(response?.UserId))
-            return null;
 
-        RemoveAPI(tag, response.UserId);
-        _apis.Add((tag, response.UserId, api));
+        if (RemoveAPI(response.UserId, tag))
+            _logger?.LogDebug("User '{userId}' ('{tag}') old api removed", api.UserId, tag);
 
-        return response?.UserId;
+        lock(_apis)
+            _apis.Add((tag, response.UserId, api));
+        _logger?.LogDebug("User '{userId}' ('{tag}') api added", api.UserId, tag);
     }
 
-    private void Api_TokenRefreshed(string tag, TwitcherAPI? api, string tokens)
+    private void Api_TokenRefreshed(string? tag, TwitcherAPI? api, string tokens)
     {
         if (api == default || string.IsNullOrEmpty(api.UserId))
             return;
         TokenRefreshed?.Invoke(this, new TokenRefreshedArgs(tag, api.UserId, tokens));
-        Logger?.LogDebug("User '{userId}' ('{tag}') token refreshed", api.UserId, tag);
+        _logger?.LogDebug("User '{userId}' ('{tag}') token refreshed", api.UserId, tag);
+    }
+    
+    /// <summary>Get all apis by <paramref name="tag"/></summary>
+    /// <param name="tag">Tag</param>
+    /// <returns>Apis enumerable</returns>
+    public List<(string userId, TwitcherAPI api)> GetAPIsByTag(string? tag)
+    {
+        lock (_apis)
+            return _apis.Where(a => a.tag == tag).Select(a => (a.userId, a.api)).ToList();
     }
 
-    private void Api_TokenDead(string tag, TwitcherAPI? api)
+    /// <summary>Get api by <paramref name="userId"/> and <paramref name="tag"/></summary>
+    /// <param name="userId">UserId of the returned api</param>
+    /// <param name="tag">Tag of the returned api</param>
+    /// <returns>Api</returns>
+    public TwitcherAPI? GetAPI(string userId, string? tag = null)
     {
-        if (api == default)
-            return;
-        TokenDead?.Invoke(this, new TokenDeadArgs(tag, api.UserId));
-        Logger?.LogDebug("User '{userId}' ('{tag}') token dead", api.UserId, tag);
-        if (string.IsNullOrEmpty(api.UserId))
-            return;
-        _apis.Remove((tag, api.UserId, api));
+        lock (_apis)
+            return _apis.FirstOrDefault(a => a.tag == tag && a.userId == userId).api;
     }
 
-    public IEnumerable<(string userId, TwitcherAPI api)> GetAPIsByTag(string tag) => _apis.Where(a => a.tag == tag).Select(a => (a.userId, a.api));
-
-    public TwitcherAPI? GetAPI(string tag, string userId) => _apis.FirstOrDefault(a => a.tag == tag && a.userId == userId).api;
-
-    public int RemoveAPIsByTag(string tag) => _apis.RemoveAll(a => a.tag == tag);
-
-    public bool RemoveAPI(string tag, string userId)
+    /// <summary>Remove all api by <paramref name="tag"/></summary>
+    /// <param name="tag">Tag</param>
+    /// <returns>The number of removed elements</returns>
+    public int RemoveAPIsByTag(string? tag)
     {
-        var api = _apis.FirstOrDefault(a => a.tag == tag && a.userId == userId).api;
-        if (api == default)
-            return false;
-
-        _apis.Remove((tag, userId, api));
-        return true;
+        lock (_apis)
+            return _apis.RemoveAll(a => a.tag == tag);
     }
 
-    /// <summary>Run validation of all tokens every hour. Can be overridden by a cancellationToken from the constructor</summary>
-    public void RunValidating()
+    /// <summary>Remove api by <paramref name="userId"/> and <paramref name="tag"/></summary>
+    /// <param name="userId">UserId of the removed</param>
+    /// <param name="tag">Tag of the removed</param>
+    /// <returns><see langword="true"/> if api removed, otherwise <see langword="false"/></returns>
+    public bool RemoveAPI(string userId, string? tag = null)
     {
-        Task.Run(() => Validating(), _cancellationToken);
-    }
-
-    private async Task Validating()
-    {
-        while (!_cancellationToken.IsCancellationRequested)
+        lock (_apis)
         {
-            await Task.Delay(TimeSpan.FromMinutes(60 + 5 * (Random.Shared.NextDouble() - 0.5)), _cancellationToken);
-            foreach (var api in _apis.Select(a => a.api).Where(a => a != default))
-            {
-                try
-                {
-                    _ = await api.Validate();
-                }
-                catch (DeadTokenException) { }
-                catch (InternalServerException) { }
-            }
+            var api = _apis.FirstOrDefault(a => a.tag == tag && a.userId == userId).api;
+            if (api == default)
+                return false;
+
+            _apis.Remove((tag, userId, api));
+            return true;
         }
     }
 }

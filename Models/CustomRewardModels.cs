@@ -13,11 +13,11 @@
 /// <param name="MaxPerUserPerStream">The maximum number per user per stream if enabled</param>
 /// <param name="IsGlobalCooldownEnabled">Whether a cooldown is enabled</param>
 /// <param name="GlobalCooldownSeconds">The cooldown in seconds if enabled</param>
-/// <param name="ShouldRedemptionsSkipRequestQueue">Should redemptions be set to <see cref="RedemptionStatus.FULFILLED" /> status immediately when redeemed and skip the request queue instead of the normal <see cref="RedemptionStatus.UNFULFILLED" /> status</param>
-public record CustomRewardRequestBody(string? Title = null, int Cost = default, string? Prompt = null, bool? IsEnabled = null, string? BackgroundColor = null, bool? IsUserInputRequired = null,
-    bool? IsMaxPerStreamEnabled = null, int MaxPerStream = default,
-    bool? IsMaxPerUserPerStreamEnabled = null, int MaxPerUserPerStream = default,
-    bool? IsGlobalCooldownEnabled = null, int GlobalCooldownSeconds = default,
+/// <param name="ShouldRedemptionsSkipRequestQueue">Should redemptions be set to <see cref="RedemptionStatus.FULFILLED" /> status immediately when redeemed and skip the request queue instead of the normal <see cref="RedemptionStatus.Unfulfilled" /> status</param>
+public record CustomRewardRequestBody(string? Title = null, int? Cost = null, string? Prompt = null, bool? IsEnabled = null, string? BackgroundColor = null, bool? IsUserInputRequired = null,
+    bool? IsMaxPerStreamEnabled = null, int? MaxPerStream = null,
+    bool? IsMaxPerUserPerStreamEnabled = null, int? MaxPerUserPerStream = null,
+    bool? IsGlobalCooldownEnabled = null, int? GlobalCooldownSeconds = null,
     bool? ShouldRedemptionsSkipRequestQueue = null);
 
 /// <param name="BroadcasterId">ID of the channel the reward is for</param>
@@ -37,7 +37,7 @@ public record CustomRewardRequestBody(string? Title = null, int Cost = default, 
 /// <param name="GlobalCooldownSetting">Whether a cooldown is enabled and what the cooldown is</param>
 /// <param name="IsPaused">Is the reward currently paused, if true viewers can’t redeem</param>
 /// <param name="IsInStock">Is the reward currently in stock, if false viewers can’t redeem</param>
-/// <param name="ShouldRedemptionsSkipRequestQueue">Should redemptions be set to <see cref="RedemptionStatus.FULFILLED" /> status immediately when redeemed and skip the request queue instead of the normal <see cref="RedemptionStatus.UNFULFILLED" /> status</param>
+/// <param name="ShouldRedemptionsSkipRequestQueue">Should redemptions be set to <see cref="RedemptionStatus.FULFILLED" /> status immediately when redeemed and skip the request queue instead of the normal <see cref="RedemptionStatus.Unfulfilled" /> status</param>
 /// <param name="RedemptionsRedeemedCurrentStream">The number of redemptions redeemed during the current live stream. 0 if the broadcasters stream isn’t live or max_per_stream_setting isn’t enabled</param>
 /// <param name="CooldownExpiresAt">Time of the cooldown expiration. Null if the reward isn’t on cooldown</param>
 public record CustomRewardResponseBody(string BroadcasterId, string BroadcasterLogin, string BroadcasterName, Guid Id, string Title, string? Prompt, int Cost,

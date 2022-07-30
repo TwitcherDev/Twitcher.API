@@ -1,25 +1,23 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using RestSharp.Serializers;
-using System.Globalization;
+using System.Text;
 
 namespace Twitcher.API;
 
-internal class JsonSnakeSerializer : IRestSerializer
+internal class TwitcherJsonSerializer : IRestSerializer
 {
     private static JsonSerializerSettings CreateSettings()
     {
         var settings = new JsonSerializerSettings
         {
             DefaultValueHandling = DefaultValueHandling.Ignore,
-            ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy() }
+            ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeStrategy() }
         };
         settings.Converters.Add(new DateTimeConverter());
-        //settings.Converters.Add(new SnakeEnumConverter<LeaderboardTimePeriod>(LeaderboardTimePeriod.All));
-        //settings.Converters.Add(new SnakeEnumConverter<CheermoteType>(CheermoteType.None));
-        //settings.Converters.Add(new SnakeEnumConverter<UserType>(UserType.None));
-        //settings.Converters.Add(new SnakeEnumConverter<BroadcasterType>(BroadcasterType.None));
+        settings.Converters.Add(new StringEnumUpperConverter<RedemptionStatus>(RedemptionStatus.Unfulfilled));
+        settings.Converters.Add(new StringEnumUpperConverter<SortOrder>(SortOrder.Oldest));
+        settings.Converters.Add(new StringEnumConverter(new SnakeStrategy()));
         return settings;
     }
 
@@ -28,9 +26,9 @@ internal class JsonSnakeSerializer : IRestSerializer
 
     internal static JsonSerializerSettings Settings => _settings;
 
-    public ISerializer Serializer { get; } = new Serializer();
+    public ISerializer Serializer { get; } = new TwitcherSerializer();
 
-    public IDeserializer Deserializer { get; } = new Deserializer();
+    public IDeserializer Deserializer { get; } = new TwitcherDeserializer();
 
     public string[] AcceptedContentTypes => _acceptedContentTypes;
 
@@ -46,54 +44,17 @@ internal class JsonSnakeSerializer : IRestSerializer
     }
 }
 
-internal class Serializer : ISerializer
+internal class TwitcherSerializer : ISerializer
 {
     public string ContentType { get; set; } = "application/json";
 
-    public string? Serialize(object obj) => JsonConvert.SerializeObject(obj, JsonSnakeSerializer.Settings);
+    public string? Serialize(object obj) => JsonConvert.SerializeObject(obj, TwitcherJsonSerializer.Settings);
 }
 
-internal class Deserializer : IDeserializer
+internal class TwitcherDeserializer : IDeserializer
 {
-    public T? Deserialize<T>(RestResponse response) => string.IsNullOrEmpty(response.Content) ? default : JsonConvert.DeserializeObject<T>(response.Content, JsonSnakeSerializer.Settings);
+    public T? Deserialize<T>(RestResponse response) => string.IsNullOrEmpty(response.Content) ? default : JsonConvert.DeserializeObject<T>(response.Content, TwitcherJsonSerializer.Settings);
 }
-
-//internal class SnakeConverter : JsonNamingPolicy
-//{
-//    public override string ConvertName(string name) => CamelToSnake(name);
-
-//    public static string CamelToSnake(string name)
-//    {
-//        var sb = new StringBuilder();
-//        bool isPrevious = true;
-//        foreach (var c in name)
-//        {
-//            if (!isPrevious & (isPrevious = (char.IsUpper(c) || char.IsDigit(c))))
-//                sb.Append('_');
-//            sb.Append(char.ToLower(c));
-//        }
-//        return sb.ToString();
-//    }
-
-//    public static string SnakeToCamel(string name)
-//    {
-//        var sb = new StringBuilder();
-//        bool isUpper = true;
-//        foreach (var c in name)
-//        {
-//            if (c == '_')
-//                isUpper = true;
-//            else if (isUpper)
-//            {
-//                sb.Append(char.ToUpper(c));
-//                isUpper = false;
-//            }
-//            else
-//                sb.Append(char.ToLower(c));
-//        }
-//        return sb.ToString();
-//    }
-//}
 
 internal class DateTimeConverter : JsonConverter<DateTime>
 {
@@ -111,23 +72,66 @@ internal class DateTimeConverter : JsonConverter<DateTime>
     }
 }
 
-//internal class SnakeEnumConverter<T> : JsonConverter<T> where T : struct, IConvertible
-//{
-//    internal T DefaultValue { get; }
+internal class SnakeStrategy : NamingStrategy
+{
+    protected override string ResolvePropertyName(string name) => CamelToSnake(name);
 
-//    public SnakeEnumConverter(T defaultValue)
-//    {
-//        DefaultValue = defaultValue;
-//    }
+    public static string CamelToSnake(string name)
+    {
+        var sb = new StringBuilder();
+        bool isPrevious = true;
+        foreach (var c in name)
+        {
+            if (!isPrevious & (isPrevious = (char.IsUpper(c) || char.IsDigit(c))))
+                sb.Append('_');
+            sb.Append(char.ToLower(c));
+        }
+        return sb.ToString();
+    }
 
-//    public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-//    {
-//        var str = reader.GetString();
-//        if (string.IsNullOrEmpty(str))
-//            return DefaultValue;
-//        return Enum.Parse<T>(SnakeConverter.SnakeToCamel(str));
-//    }
+    public static string SnakeToCamel(string name)
+    {
+        var sb = new StringBuilder();
+        bool isUpper = true;
+        foreach (var c in name)
+        {
+            if (c == '_')
+                isUpper = true;
+            else if (isUpper)
+            {
+                sb.Append(char.ToUpper(c));
+                isUpper = false;
+            }
+            else
+                sb.Append(char.ToLower(c));
+        }
+        return sb.ToString();
+    }
+}
 
-//    public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options) => writer.WriteStringValue(SnakeConverter.CamelToSnake(value.ToString()!));
+internal class StringEnumUpperConverter<T> : JsonConverter<T> where T : struct
+{
+    private readonly T _defaultValue;
 
-//}
+    public StringEnumUpperConverter(T defaultValue)
+    {
+        _defaultValue = defaultValue;
+    }
+
+    public override T ReadJson(JsonReader reader, Type objectType, T existingValue, bool hasExistingValue, JsonSerializer serializer)
+    {
+        var str = (string?)reader.Value;
+        if (string.IsNullOrEmpty(str))
+            return _defaultValue;
+        return Enum.Parse<T>(SnakeStrategy.SnakeToCamel(str), true);
+    }
+
+    public override void WriteJson(JsonWriter writer, T value, JsonSerializer serializer)
+    {
+        var str = value.ToString();
+        if (string.IsNullOrEmpty(str))
+            writer.WriteNull();
+        else
+            writer.WriteValue(SnakeStrategy.CamelToSnake(str).ToUpper());
+    }
+}

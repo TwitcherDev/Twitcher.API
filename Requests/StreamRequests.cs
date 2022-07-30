@@ -9,14 +9,12 @@ public static class StreamRequests
     /// <param name="userIds">Returns streams broadcast by one or more specified user IDs. You can specify up to 100 IDs</param>
     /// <param name="userLogins">Returns streams broadcast by one or more specified user login names. You can specify up to 100 names</param>
     /// <param name="first">Maximum number of objects to return. Maximum: 100</param>
-    /// <param name="after">Cursor for forward pagination</param>
     /// <param name="before">Cursor for backward pagination</param>
+    /// <param name="after">Cursor for forward pagination</param>
     /// <returns>Response</returns>
     /// <exception cref="NotValidatedException"></exception>
-    /// <exception cref="DeadTokenException"></exception>
-    /// <exception cref="BadRequestException"></exception>
-    /// <exception cref="InternalServerException"></exception>
-    public static async Task<DataPaginationResponse<StreamResponseBody[]>?> GetStreams(this TwitcherAPI api, IEnumerable<string>? gameIds = null, IEnumerable<string>? languages = null, IEnumerable<string>? userIds = null, IEnumerable<string>? userLogins = null, int first = 20, string? after = null, string? before = null)
+    /// <exception cref="TwitchErrorException"></exception>
+    public static async Task<DataPaginationResponse<StreamResponseBody[]>> GetStreams(this TwitcherAPI api, IEnumerable<string>? gameIds = null, IEnumerable<string>? languages = null, IEnumerable<string>? userIds = null, IEnumerable<string>? userLogins = null, int first = 20, string? before = null, string? after = null)
     {
         var request = new RestRequest("helix/streams", Method.Get);
 
@@ -39,14 +37,13 @@ public static class StreamRequests
         if (first != 20)
             request.AddQueryParameter("first", first);
 
-        if (after != null)
-            request.AddQueryParameter("after", after);
-
         if (before != null)
             request.AddQueryParameter("before", before);
 
-        var response = await api.APIRequest<DataPaginationResponse<StreamResponseBody[]>>(request);
+        if (after != null)
+            request.AddQueryParameter("after", after);
 
-        return response.Data;
+        var response = await api.APIRequest<DataPaginationResponse<StreamResponseBody[]>>(request);
+        return response.Data!;
     }
 }

@@ -2,6 +2,6 @@
 
 public enum SortOrder
 {
-    OLDEST,
-    NEWEST
+    Oldest,
+    Newest
 }

@@ -123,6 +123,9 @@ public static class Scopes
     /// <summary>user:read:broadcast</summary>
     public static string UserReadBroadcast => "user:read:broadcast";
 
+    /// <summary>user:edit:broadcast</summary>
+    public static string UserEditBroadcast => "user:edit:broadcast";
+
     /// <summary>user:manage:chat_color</summary>
     public static string UserManageChatColor => "user:manage:chat_color";
 

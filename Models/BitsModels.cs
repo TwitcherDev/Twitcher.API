@@ -4,7 +4,7 @@
 /// <param name="Data">Array of leaderboard users</param>
 /// <param name="DateRange">Date range for returned data</param>
 /// <param name="Total">Total number of results (users) returned. This is count or the total number of entries in the leaderboard, whichever is less</param>
-public record BitsLeaderboardResponse(BitsLeaderboardMember[] Data, BitsLeaderboardRange DateRange, int Total) : DataResponse<BitsLeaderboardMember[]>(Data);
+public record BitsLeaderboardResponseBody(BitsLeaderboardMember[] Data, BitsLeaderboardRange DateRange, int Total) : DataResponse<BitsLeaderboardMember[]>(Data);
 
 /// <param name="UserId">ID of the user (viewer) in the leaderboard entry</param>
 /// <param name="UserLogin">User login name</param>
@@ -25,7 +25,7 @@ public record BitsLeaderboardRange(DateTime StartedAt, DateTime EndedAt);
 /// <param name="Order">Order of the emotes as shown in the bits card, in ascending order</param>
 /// <param name="LastUpdated">The data when this Cheermote was last updated</param>
 /// <param name="IsCharitable">Indicates whether or not this emote provides a charity contribution match during charity campaigns</param>
-public record CheermotesResponse(string Prefix, CheermoteTier[] Tiers, CheermoteType Type, int Order, DateTime LastUpdated, bool IsCharitable);
+public record CheermotesResponseBody(string Prefix, CheermoteTier[] Tiers, CheermoteType Type, int Order, DateTime LastUpdated, bool IsCharitable);
 
 /// <param name="MinBits">Minimum number of bits needed to be used to hit the given tier of emote</param>
 /// <param name="Id">ID of the emote tier. Possible tiers are: 1,100,500,1000,5000, 10k, or 100k</param>

@@ -3,14 +3,14 @@ using Twitcher.API.Events;
 
 namespace Twitcher.API;
 
-/// <summary></summary>
+/// <summary>Class for requests to helix twitch API</summary>
 public class TwitcherAPI
 {
+    private static readonly RestClient _idClient = new RestClient("https://id.twitch.tv").UseSerializer<TwitcherJsonSerializer>();
+    private static readonly RestClient _apiClient = new RestClient("https://api.twitch.tv").UseSerializer<TwitcherJsonSerializer>();
+
     private readonly string _clientId;
     private readonly string _clientSecret;
-    private readonly RestClient _idClient;
-    private readonly RestClient _apiClient;
-
     private bool _isValidated = false;
 
     /// <summary>Twitch id of the token owner</summary>
@@ -25,28 +25,29 @@ public class TwitcherAPI
     public DateTime ExpiresIn { get; private set; }
     /// <summary>Token scopes</summary>
     public string[]? Scopes { get; private set; }
-    /// <summary>Logger</summary>
+    /// <summary>Logger for raw trace requests / responses data</summary>
     public ILogger? Logger { get; set; }
-
+    /// <summary>Allows you to find out if the token has been changed since the last <see cref="SaveTokens"/></summary>
     public bool IsRefreshed { get; private set; } = false;
+
+    /// <summary>Returns tokens, sets <see cref="IsRefreshed"/> to <see langword="false"/></summary>
+    /// <returns>Tokens in 'access:refresh' format</returns>
     public string SaveTokens()
     {
         IsRefreshed = false;
         return AccessToken + ':' + RefreshToken;
     }
 
+    /// <summary>Invoked when the token has been changed, an alternative way to save tokens</summary>
     public event EventHandler<APITokenRefreshedArgs>? TokenRefreshed;
-    public event EventHandler? TokenDead;
 
-    /// <summary></summary>
-    /// <param name="tokens">Access and refresh token in the format: 'access:refresh'</param>
-    /// <param name="clientId">Application client id</param>
-    /// <param name="clientSecret">Application client secret</param>
+    /// <summary>Create an instance of TwitcherAPI using tokens</summary>
+    /// <param name="tokens">Access and refresh tokens in 'access:refresh' format</param>
+    /// <param name="clientId">Id of the application that created the token</param>
+    /// <param name="clientSecret">Secret of the application that created the token</param>
     /// <param name="userId">Twitch id of the token owner if known</param>
-    public TwitcherAPI(string tokens, string clientId, string clientSecret, string? userId = default) :
-        this(tokens, clientId, clientSecret, new RestClient("https://id.twitch.tv").UseSerializer<JsonSnakeSerializer>(), new RestClient("https://api.twitch.tv").UseSerializer<JsonSnakeSerializer>(), userId) { }
-
-    internal TwitcherAPI(string tokens, string clientId, string clientSecret, RestClient idClient, RestClient apiClient, string? userId = default)
+    /// <exception cref="ArgumentException"></exception>
+    public TwitcherAPI(string tokens, string clientId, string clientSecret, string? userId = default)
     {
         if (string.IsNullOrEmpty(tokens))
             throw new ArgumentNullException(nameof(tokens));
@@ -60,17 +61,47 @@ public class TwitcherAPI
         RefreshToken = s[1];
         ExpiresIn = DateTime.UtcNow;
 
-        _clientId = clientId;
-        _clientSecret = clientSecret;
-        _idClient = idClient;
-        _apiClient = apiClient;
+        _clientId = clientId ?? throw new ArgumentNullException(nameof(clientId));
+        _clientSecret = clientSecret ?? throw new ArgumentNullException(nameof(clientSecret));
     }
 
-    /// <summary>Refresh access token request</summary>
+    /// <summary>Using authorization code grant flow for generate new token</summary>
+    /// <param name="code">Code</param>
+    /// <param name="redirectUri">Redirect uri</param>
+    /// <param name="clientId">Id of the application that created the token</param>
+    /// <param name="clientSecret">Secret of the application that created the token</param>
+    /// <param name="logger">Logger for raw trace requests / responses data</param>
+    /// <returns>Instance of TwitchAPI created from the received token</returns>
+    /// <exception cref="TwitchErrorException"></exception>
+    public static async Task<TwitcherAPI> AuthorizeCode(string code, string redirectUri, string clientId, string clientSecret, ILogger? logger = null)
+    {
+        var request = new RestRequest("oauth2/token", Method.Post)
+            .AddQueryParameter("grant_type", "authorization_code")
+            .AddQueryParameter("client_id", clientId)
+            .AddQueryParameter("client_secret", clientSecret)
+            .AddQueryParameter("code", code)
+            .AddQueryParameter("redirect_uri", redirectUri);
+
+        var response = await _idClient.ExecuteAsync(request);
+        logger?.LogTrace("Authorization code response {status}: {content}", response.StatusCode, response.Content);
+
+        if (!response.IsSuccessful)
+        {
+            var error = _idClient.Deserialize<ErrorResponse>(response).Data;
+            throw GenerateTwitchErrorException(response.StatusCode, error);
+        }
+
+        var data = _idClient.Deserialize<AuthorizationCodeResponseBody>(response).Data;
+        if (data == null)
+            throw new NullReferenceException("Twitch return success token response without body");
+
+        return new TwitcherAPI(data.AccessToken + ':' + data.RefreshToken, clientId, clientSecret) { Logger = logger };
+    }
+
+    /// <summary>Refresh access token</summary>
     /// <returns>Refresh response</returns>
-    /// <exception cref="DeadTokenException"></exception>
-    /// <exception cref="InternalServerException"></exception>
-    public async Task<RefreshResponseBody?> Refresh()
+    /// <exception cref="TwitchErrorException"></exception>
+    public async Task<RefreshResponseBody> Refresh()
     {
         var request = new RestRequest("oauth2/token", Method.Post)
             .AddQueryParameter("grant_type", "refresh_token")
@@ -78,101 +109,78 @@ public class TwitcherAPI
             .AddQueryParameter("client_secret", _clientSecret)
             .AddQueryParameter("refresh_token", RefreshToken);
 
-        var response = await _idClient.ExecuteAsync<RefreshResponseBody>(request);
+        var response = await _idClient.ExecuteAsync(request);
         Logger?.LogTrace("User '{id}' refresh response {status}: {content}", UserId, response.StatusCode, response.Content);
 
-        if (response.StatusCode == HttpStatusCode.BadRequest)
+        if (!response.IsSuccessful)
         {
-            TokenDead?.Invoke(this, EventArgs.Empty);
-            throw new DeadTokenException();
+            var error = _idClient.Deserialize<ErrorResponse>(response).Data;
+            throw GenerateTwitchErrorException(response.StatusCode, error);
         }
 
-        if (response.StatusCode == HttpStatusCode.InternalServerError)
-            throw new InternalServerException();
+        var data = _idClient.Deserialize<RefreshResponseBody>(response).Data;
+        if (data == null)
+            throw new NullReferenceException("Twitch returns success refresh response without body");
 
-        if (response.Data != default &&
-            !string.IsNullOrEmpty(response.Data.AccessToken) &&
-            !string.IsNullOrEmpty(response.Data.RefreshToken))
-        {
-            AccessToken = response.Data.AccessToken;
-            RefreshToken = response.Data.RefreshToken;
-            Scopes = response.Data.Scopes;
-            ExpiresIn = DateTime.UtcNow.AddSeconds(response.Data.ExpiresIn);
-            IsRefreshed = true;
-            _isValidated = true;
-            TokenRefreshed?.Invoke(this, new APITokenRefreshedArgs(AccessToken + ':' + RefreshToken));
-            Logger?.LogDebug("User '{id}' token refreshed", UserId);
-        }
-
-        return response.Data;
+        AccessToken = data.AccessToken;
+        RefreshToken = data.RefreshToken;
+        Scopes = data.Scopes;
+        ExpiresIn = DateTime.UtcNow.AddSeconds(data.ExpiresIn);
+        IsRefreshed = true;
+        _isValidated = true;
+        TokenRefreshed?.Invoke(this, new APITokenRefreshedArgs(AccessToken + ':' + RefreshToken));
+        return data;
     }
 
-    /// <summary>Validate request</summary>
+    /// <summary>Validate access token</summary>
     /// <returns>Validate response</returns>
-    /// <exception cref="DeadTokenException"></exception>
-    /// <exception cref="InternalServerException"></exception>
-    public async Task<ValidateResponseBody?> Validate()
+    /// <exception cref="TwitchErrorException"></exception>
+    public async Task<ValidateResponseBody> Validate()
     {
         var request = new RestRequest("oauth2/validate", Method.Get)
             .AddHeader("Authorization", "Bearer " + AccessToken);
 
-        var response = await _idClient.ExecuteAsync<ValidateResponseBody>(request);
+        var response = await _idClient.ExecuteAsync(request);
         Logger?.LogTrace("User '{id}' validate response {status}: {content}", UserId, response.StatusCode, response.Content);
 
         if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
             await Refresh();
             request.AddOrUpdateHeader("Authorization", "Bearer " + AccessToken);
-            response = await _idClient.ExecuteAsync<ValidateResponseBody>(request);
-            Logger?.LogTrace("User '{id}' second validate response {status}: {content}", UserId, response.StatusCode, response.Content);
-
-            if (response.StatusCode == HttpStatusCode.Unauthorized)
-            {
-                TokenDead?.Invoke(this, EventArgs.Empty);
-                throw new DeadTokenException();
-            }
+            response = await _idClient.ExecuteAsync(request);
+            Logger?.LogTrace("User '{id}' validate response {status}: {content}", UserId, response.StatusCode, response.Content);
         }
-
-        if (response.StatusCode == HttpStatusCode.InternalServerError)
-            throw new InternalServerException();
-
-        if (response.Data != default)
+        if (!response.IsSuccessful)
         {
-            Scopes = response.Data.Scopes;
-            ExpiresIn = DateTime.UtcNow.AddSeconds(response.Data.ExpiresIn);
-            UserId = response.Data.UserId;
-            Login = response.Data.Login;
-            _isValidated = true;
-            Logger?.LogDebug("User '{id}' token validated. Scopes: [{scopes}]. ExpiresIn: {expiresIn}", UserId, string.Join(", ", Scopes ?? new[] { "empty" }), response.Data.ExpiresIn);
+            var error = _idClient.Deserialize<ErrorResponse>(response).Data;
+            throw GenerateTwitchErrorException(response.StatusCode, error);
         }
 
-        return response.Data;
-    }
+        var data = _idClient.Deserialize<ValidateResponseBody>(response).Data;
+        if (data == null)
+            throw new NullReferenceException("Twitch returns success validate response without body");
 
-    /// <summary>Validate tokens</summary>
-    /// <returns><see langword="true" /> if the validate successful; otherwise, <see langword="false" /></returns>
-    /// <exception cref="InternalServerException"></exception>
-    public async Task<bool> Check()
-    {
-        try
-        {
-            var response = await Validate();
-            return response != default;
-        }
-        catch (DeadTokenException)
-        {
-            return false;
-        }
+        Scopes = data.Scopes;
+        ExpiresIn = DateTime.UtcNow.AddSeconds(data.ExpiresIn);
+        UserId = data.UserId;
+        Login = data.Login;
+        _isValidated = true;
+        return data;
     }
 
     /// <summary>Request to api.twitch.tv</summary>
     /// <typeparam name="TResult">Response type</typeparam>
-    /// <param name="request">Request data</param>
-    /// <returns>Response data</returns>
+    /// <param name="request">Request</param>
+    /// <returns>Response</returns>
     /// <exception cref="NotValidatedException"></exception>
-    /// <exception cref="DeadTokenException"></exception>
-    /// <exception cref="BadRequestException"></exception>
-    /// <exception cref="InternalServerException"></exception>
+    /// <exception cref="TwitchErrorException"></exception>
+    public async Task<RestResponse<TResult>> APIRequest<TResult>(RestRequest request) => _apiClient.Deserialize<TResult>(await APIRequest(request));
+
+    /// <summary>Request to api.twitch.tv</summary>
+    /// <param name="request">Request</param>
+    /// <returns>Response</returns>
+    /// <exception cref="NotValidatedException"></exception>
+    /// <exception cref="TwitchErrorException"></exception>
     public async Task<RestResponse> APIRequest(RestRequest request)
     {
         if (!_isValidated)
@@ -181,7 +189,9 @@ public class TwitcherAPI
         request.AddHeader("Client-Id", _clientId);
         request.AddHeader("Authorization", "Bearer " + AccessToken);
 
-        Logger?.LogTrace("User '{id}' api request {method} {uri}", UserId, request.Method, _apiClient.BuildUri(request));
+        var uri = _apiClient.BuildUri(request);
+
+        Logger?.LogTrace("User '{id}' api request {method} {uri}", UserId, request.Method, uri);
         var response = await _apiClient.ExecuteAsync(request);
         Logger?.LogTrace("User '{id}' api response {status}: {content}", UserId, response.StatusCode, response.Content);
 
@@ -189,69 +199,35 @@ public class TwitcherAPI
         {
             await Refresh();
             request.AddOrUpdateHeader("Authorization", "Bearer " + AccessToken);
+            Logger?.LogTrace("User '{id}' api request {method} {uri}", UserId, request.Method, uri);
             response = await _apiClient.ExecuteAsync(request);
-            
-            if (response.StatusCode == HttpStatusCode.Unauthorized)
-            {
-                TokenDead?.Invoke(this, EventArgs.Empty);
-                throw new DeadTokenException();
-            }
+            Logger?.LogTrace("User '{id}' api response {status}: {content}", UserId, response.StatusCode, response.Content);
         }
-
-        if (response.StatusCode == HttpStatusCode.BadRequest)
+        if (!response.IsSuccessful)
         {
-            Logger?.LogError("Bad request {method} {uri}: {result}", request.Method, _apiClient.BuildUri(request), response.Content);
-            throw new BadRequestException();
+            var error = _apiClient.Deserialize<ErrorResponse>(response).Data;
+            throw GenerateTwitchErrorException(response.StatusCode, error);
         }
-
-        if (response.StatusCode == HttpStatusCode.InternalServerError)
-            throw new InternalServerException();
-
         return response;
     }
 
-    /// <summary>Request to api.twitch.tv</summary>
-    /// <typeparam name="TResult">Response type</typeparam>
-    /// <param name="request">Request data</param>
-    /// <returns>Response data</returns>
-    /// <exception cref="NotValidatedException"></exception>
-    /// <exception cref="DeadTokenException"></exception>
-    /// <exception cref="BadRequestException"></exception>
-    /// <exception cref="InternalServerException"></exception>
-    public async Task<RestResponse<TResult>> APIRequest<TResult>(RestRequest request)
+    private static TwitchErrorException GenerateTwitchErrorException(HttpStatusCode status, ErrorResponse? error)
     {
-        if (!_isValidated)
-            throw new NotValidatedException();
+        if (status == HttpStatusCode.BadRequest)
+            return new BadRequestException(error?.Message);
 
-        request.AddHeader("Client-Id", _clientId);
-        request.AddHeader("Authorization", "Bearer " + AccessToken);
+        if (status == HttpStatusCode.Unauthorized)
+            return new UnauthorizedException(error?.Message);
 
-        Logger?.LogTrace("User '{id}' api request {method} {uri}", UserId, request.Method, _apiClient.BuildUri(request));
-        var response = await _apiClient.ExecuteAsync<TResult>(request);
-        Logger?.LogTrace("User '{id}' api response {status}: {content}", UserId, response.StatusCode, response.Content);
+        if (status == HttpStatusCode.Forbidden)
+            return new ForbiddenException(error?.Message);
 
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
-        {
-            await Refresh();
-            request.AddOrUpdateHeader("Authorization", "Bearer " + AccessToken);
-            response = await _apiClient.ExecuteAsync<TResult>(request);
+        if (status == HttpStatusCode.NotFound)
+            return new NotFoundException(error?.Message);
 
-            if (response.StatusCode == HttpStatusCode.Unauthorized)
-            {
-                TokenDead?.Invoke(this, EventArgs.Empty);
-                throw new DeadTokenException();
-            }
-        }
+        if (500 <= (int)status && (int)status < 600)
+            return new ServerErrorException((int)status, error?.Error, error?.Message);
 
-        if (response.StatusCode == HttpStatusCode.BadRequest)
-        {
-            Logger?.LogError("Bad request {method} {uri}: {result}", request.Method, _apiClient.BuildUri(request), response.Content);
-            throw new BadRequestException();
-        }
-
-        if (response.StatusCode == HttpStatusCode.InternalServerError)
-            throw new InternalServerException();
-
-        return response;
+        return new TwitchErrorException((int)status, error?.Error, error?.Message);
     }
 }

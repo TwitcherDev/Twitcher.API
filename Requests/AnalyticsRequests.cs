@@ -1,7 +1,4 @@
-﻿using Twitcher.API.Exceptions;
-using Twitcher.API.Models;
-
-namespace Twitcher.API.Requests;
+﻿namespace Twitcher.API.Requests;
 
 public static class AnalyticsRequests
 {
@@ -14,12 +11,9 @@ public static class AnalyticsRequests
     /// <param name="endedAt">Ending date/time for returned reports. If this is provided, started_at also must be specified</param>
     /// <param name="startedAt">Starting date/time for returned reports. This must be on or after January 31, 2018. If this is provided, ended_at also must be specified</param>
     /// <returns>Response. If you leave both <paramref name="startedAt" /> and <paramref name="endedAt" /> blank, the API returns the most recent date of data</returns>
-    /// <exception cref="ScopeRequireException"></exception>
     /// <exception cref="NotValidatedException"></exception>
-    /// <exception cref="DeadTokenException"></exception>
-    /// <exception cref="BadRequestException"></exception>
-    /// <exception cref="InternalServerException"></exception>
-    public static async Task<DataPaginationResponse<ExtensionAnalyticsResponse[]>?> GetExtensionAnalytics(this TwitcherAPI api, int first = 20, string? after = null, DateTime startedAt = default, DateTime endedAt = default)
+    /// <exception cref="TwitchErrorException"></exception>
+    public static async Task<DataPaginationResponse<ExtensionAnalyticsResponseBody[]>> GetExtensionAnalytics(this TwitcherAPI api, int first = 20, string? after = null, DateTime startedAt = default, DateTime endedAt = default)
     {
         var request = new RestRequest("helix/analytics/extensions", Method.Get)
             .AddQueryParameter("type", "overview_v2");
@@ -36,9 +30,9 @@ public static class AnalyticsRequests
         if (endedAt != default)
             request.AddQueryParameter("ended_at", endedAt.ToString("yyyy-MM-ddT00:00:00Z"));
 
-        var response = await api.APIRequest<DataPaginationResponse<ExtensionAnalyticsResponse[]>>(request);
+        var response = await api.APIRequest<DataPaginationResponse<ExtensionAnalyticsResponseBody[]>>(request);
 
-        return response.Data;
+        return response.Data!;
     }
 
     /// <summary>Gets a URL that Extension developers can use to download analytics reports (CSV files) for their Extensions. The URL is valid for 5 minutes.
@@ -48,12 +42,9 @@ public static class AnalyticsRequests
     /// <param name="endedAt">Ending date/time for returned reports. If this is provided, started_at also must be specified</param>
     /// <param name="startedAt">Starting date/time for returned reports. This must be on or after January 31, 2018. If this is provided, ended_at also must be specified</param>
     /// <returns>Response for specified extension. If you leave both <paramref name="startedAt" /> and <paramref name="endedAt" /> blank, the API returns the most recent date of data</returns>
-    /// <exception cref="ScopeRequireException"></exception>
     /// <exception cref="NotValidatedException"></exception>
-    /// <exception cref="DeadTokenException"></exception>
-    /// <exception cref="BadRequestException"></exception>
-    /// <exception cref="InternalServerException"></exception>
-    public static async Task<ExtensionAnalyticsResponse?> GetExtensionAnalytics(this TwitcherAPI api, string extensionId, DateTime startedAt = default, DateTime endedAt = default)
+    /// <exception cref="TwitchErrorException"></exception>
+    public static async Task<ExtensionAnalyticsResponseBody> GetExtensionAnalytics(this TwitcherAPI api, string extensionId, DateTime startedAt = default, DateTime endedAt = default)
     {
         var request = new RestRequest("helix/analytics/extensions", Method.Get)
             .AddQueryParameter("extension_id", extensionId)
@@ -65,9 +56,9 @@ public static class AnalyticsRequests
         if (endedAt != default)
             request.AddQueryParameter("ended_at", endedAt.ToString("yyyy-MM-ddT00:00:00Z"));
 
-        var response = await api.APIRequest<DataResponse<ExtensionAnalyticsResponse[]>>(request);
+        var response = await api.APIRequest<DataResponse<ExtensionAnalyticsResponseBody[]>>(request);
 
-        return response.Data?.Data?.FirstOrDefault();
+        return response.Data!.Data!.FirstOrDefault()!;
     }
     #endregion
 
@@ -80,12 +71,9 @@ public static class AnalyticsRequests
     /// <param name="endedAt">Ending date/time for returned reports. If this is provided, started_at also must be specified</param>
     /// <param name="startedAt">Starting date/time for returned reports. If this is provided, ended_at also must be specified</param>
     /// <returns>Response for specified game. If you leave both <paramref name="startedAt" /> and <paramref name="endedAt" /> blank, the API returns the most recent date of data</returns>
-    /// <exception cref="ScopeRequireException"></exception>
     /// <exception cref="NotValidatedException"></exception>
-    /// <exception cref="DeadTokenException"></exception>
-    /// <exception cref="BadRequestException"></exception>
-    /// <exception cref="InternalServerException"></exception>
-    public static async Task<DataPaginationResponse<GameAnalyticsResponse[]>?> GetGameAnalytics(this TwitcherAPI api, int first = 20, string? after = null, DateTime startedAt = default, DateTime endedAt = default)
+    /// <exception cref="TwitchErrorException"></exception>
+    public static async Task<DataPaginationResponse<GameAnalyticsResponseBody[]>> GetGameAnalytics(this TwitcherAPI api, int first = 20, string? after = null, DateTime startedAt = default, DateTime endedAt = default)
     {
         var request = new RestRequest("helix/analytics/games", Method.Get)
             .AddQueryParameter("type", "overview_v2");
@@ -102,9 +90,9 @@ public static class AnalyticsRequests
         if (endedAt != default)
             request.AddQueryParameter("ended_at", endedAt.ToString("yyyy-MM-ddT00:00:00Z"));
 
-        var response = await api.APIRequest<DataPaginationResponse<GameAnalyticsResponse[]>>(request);
+        var response = await api.APIRequest<DataPaginationResponse<GameAnalyticsResponseBody[]>>(request);
 
-        return response.Data;
+        return response.Data!;
     }
 
     /// <summary>Gets a URL that game developers can use to download analytics reports (CSV files) for their games. The URL is valid for 5 minutes.
@@ -114,12 +102,9 @@ public static class AnalyticsRequests
     /// <param name="endedAt">Ending date/time for returned reports. If this is provided, started_at also must be specified</param>
     /// <param name="startedAt">Starting date/time for returned reports. If this is provided, ended_at also must be specified</param>
     /// <returns>Response for specified game. If you leave both <paramref name="startedAt" /> and <paramref name="endedAt" /> blank, the API returns the most recent date of data</returns>
-    /// <exception cref="ScopeRequireException"></exception>
     /// <exception cref="NotValidatedException"></exception>
-    /// <exception cref="DeadTokenException"></exception>
-    /// <exception cref="BadRequestException"></exception>
-    /// <exception cref="InternalServerException"></exception>
-    public static async Task<GameAnalyticsResponse?> GetGameAnalytics(this TwitcherAPI api, string gameId, DateTime startedAt = default, DateTime endedAt = default)
+    /// <exception cref="TwitchErrorException"></exception>
+    public static async Task<GameAnalyticsResponseBody> GetGameAnalytics(this TwitcherAPI api, string gameId, DateTime startedAt = default, DateTime endedAt = default)
     {
         var request = new RestRequest("helix/analytics/games", Method.Get)
             .AddQueryParameter("game_id", gameId)
@@ -131,9 +116,9 @@ public static class AnalyticsRequests
         if (endedAt != default)
             request.AddQueryParameter("ended_at", endedAt.ToString("yyyy-MM-ddT00:00:00Z"));
 
-        var response = await api.APIRequest<DataResponse<GameAnalyticsResponse[]>>(request);
+        var response = await api.APIRequest<DataResponse<GameAnalyticsResponseBody[]>>(request);
 
-        return response.Data?.Data?.FirstOrDefault();
+        return response.Data!.Data!.FirstOrDefault()!;
     }
     #endregion
 }

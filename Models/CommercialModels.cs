@@ -7,4 +7,4 @@ public record StartCommercialRequestBody(string BroadcasterId, int Length);
 /// <param name="Length">Length of the triggered commercial</param>
 /// <param name="Message">Provides contextual information on why the request failed</param>
 /// <param name="RetryAfter">Seconds until the next commercial can be served on this channel</param>
-public record StartCommercialResponse(int Length, string? Message, int RetryAfter);
+public record StartCommercialResponseBody(int Length, string? Message, int RetryAfter);
