@@ -12,9 +12,24 @@
     <Company>TwitcherDev</Company>
     <RepositoryUrl>https://github.com/TwitcherDev/Twitcher.API</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <Description>?</Description>
+    <Copyright>Copyright (c) 2022 Sawer</Copyright>
+    <PackageProjectUrl>?</PackageProjectUrl>
+    <PackageReleaseNotes></PackageReleaseNotes>
+    <PackageTags>twitch, api</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>D:\VSProjects\Twitcher\Twitcher.API\LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="LICENSE" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Update="WICKED.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
@@ -25,6 +40,12 @@
 	  <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
 	  <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 	  <PackageReference Include="RestSharp" Version="108.0.1" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <Page Include="LICENSE.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
 
   <ItemGroup>
