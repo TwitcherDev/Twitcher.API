@@ -202,7 +202,7 @@ public class TwitcherAPI
         var response = await _apiClient.ExecuteAsync(request);
         Logger?.LogTrace("User '{id}' api response {status}: {content}", UserId, response.StatusCode, response.Content);
 
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        if (RefreshToken != null && response.StatusCode == HttpStatusCode.Unauthorized)
         {
             await Refresh();
             request.AddOrUpdateHeader("Authorization", "Bearer " + AccessToken);
