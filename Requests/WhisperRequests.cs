@@ -14,7 +14,7 @@ public static class WhisperRequests
     {
         var request = new RestRequest("helix/whispers", Method.Post)
             .AddQueryParameter("from_user_id", fromUserId)
-            .AddQueryParameter("to_user_ud", toUserId)
+            .AddQueryParameter("to_user_id", toUserId)
             .AddBody(new SendWhisperRequestBody(message));
 
         _ = await api.APIRequest(request);

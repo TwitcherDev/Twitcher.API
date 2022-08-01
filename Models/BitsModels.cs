@@ -15,7 +15,7 @@ public record BitsLeaderboardMember(string UserId, string UserLogin, string User
 
 /// <param name="StartedAt">Start of the date range for the returned data</param>
 /// <param name="EndedAt">End of the date range for the returned data</param>
-public record BitsLeaderboardRange(DateTime StartedAt, DateTime EndedAt);
+public record BitsLeaderboardRange(DateTime? StartedAt, DateTime? EndedAt);
 #endregion
 
 #region Cheermotes

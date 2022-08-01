@@ -35,8 +35,8 @@ public record UserBlockResponseBody(string UserId, string UserLogin, string Disp
 /// <param name="Version">Version of the extension</param>
 /// <param name="Name">Name of the extension</param>
 /// <param name="CanActivate">Indicates whether the extension is configured such that it can be activated</param>
-/// <param name="Types">Types for which the extension can be activated</param>
-public record UserExtensionsResponseBody(string Id, string Version, string Name, bool CanActivate, ExtensionType[] Types);
+/// <param name="Type">Types for which the extension can be activated</param>
+public record UserExtensionsResponseBody(string Id, string Version, string Name, bool CanActivate, ExtensionType[] Type);
 
 /// <param name="Component">Contains data for video-component Extensions</param>
 /// <param name="Panel">Contains data for panel Extensions</param>

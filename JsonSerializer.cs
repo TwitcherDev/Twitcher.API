@@ -60,6 +60,8 @@ internal class DateTimeConverter : JsonConverter<DateTime>
 {
     public override DateTime ReadJson(JsonReader reader, Type objectType, DateTime existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
+        if (reader.ValueType == typeof(DateTime))
+            return (DateTime)reader.Value!;
         var str = (string?)reader.Value;
         if (string.IsNullOrEmpty(str))
             return default;
