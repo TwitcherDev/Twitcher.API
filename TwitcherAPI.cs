@@ -20,7 +20,7 @@ public class TwitcherAPI
     /// <summary>Access token</summary>
     public string AccessToken { get; private set; }
     /// <summary>Refresh token</summary>
-    public string RefreshToken { get; private set; }
+    public string? RefreshToken { get; private set; }
     /// <summary>Access token expiration time</summary>
     public DateTime ExpiresIn { get; private set; }
     /// <summary>Token scopes</summary>
@@ -31,34 +31,38 @@ public class TwitcherAPI
     public bool IsRefreshed { get; private set; } = false;
 
     /// <summary>Returns tokens, sets <see cref="IsRefreshed"/> to <see langword="false"/></summary>
-    /// <returns>Tokens in 'access:refresh' format</returns>
+    /// <returns>Tokens in 'access:refresh' format or only access token if no refresh</returns>
     public string SaveTokens()
     {
         IsRefreshed = false;
-        return AccessToken + ':' + RefreshToken;
+        if (RefreshToken != null)
+            return AccessToken + ':' + RefreshToken;
+        return AccessToken;
     }
 
     /// <summary>Invoked when the token has been changed, an alternative way to save tokens</summary>
     public event EventHandler<APITokenRefreshedArgs>? TokenRefreshed;
 
     /// <summary>Create an instance of TwitcherAPI using tokens</summary>
-    /// <param name="tokens">Access and refresh tokens in 'access:refresh' format</param>
+    /// <param name="tokens">Access and refresh tokens in 'access:refresh' format or only access token if no refresh</param>
     /// <param name="clientId">Id of the application that created the token</param>
     /// <param name="clientSecret">Secret of the application that created the token</param>
     /// <param name="userId">Twitch id of the token owner if known</param>
-    /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="ArgumentNullException"></exception>
     public TwitcherAPI(string tokens, string clientId, string clientSecret, string? userId = default)
     {
         if (string.IsNullOrEmpty(tokens))
             throw new ArgumentNullException(nameof(tokens));
         
-        var s = tokens.Split(':', StringSplitOptions.RemoveEmptyEntries);
-        if (s.Length != 2)
-            throw new ArgumentException("Tokens format: 'access:refresh'", nameof(tokens));
+        var s = tokens.Split(':');
+        if (s.Length == 1)
+            AccessToken = s[0];
+        else if (s.Length == 2)
+            (AccessToken, RefreshToken) = (s[0], s[1]);
+        else
+            throw new ArgumentException("Tokens format: 'access:refresh' or 'access'", nameof(tokens));
 
         UserId = userId;
-        AccessToken = s[0];
-        RefreshToken = s[1];
         ExpiresIn = DateTime.UtcNow;
 
         _clientId = clientId ?? throw new ArgumentNullException(nameof(clientId));
@@ -103,6 +107,9 @@ public class TwitcherAPI
     /// <exception cref="TwitchErrorException"></exception>
     public async Task<RefreshResponseBody> Refresh()
     {
+        if (RefreshToken == null)
+            throw new NotSupportedException("Refresh not supported without refresh token");
+
         var request = new RestRequest("oauth2/token", Method.Post)
             .AddQueryParameter("grant_type", "refresh_token")
             .AddQueryParameter("client_id", _clientId)
