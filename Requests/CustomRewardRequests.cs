@@ -22,7 +22,7 @@ public static class CustomRewardRequests
     /// <exception cref="TwitchErrorException"></exception>
     public static Task<CustomRewardResponseBody> CreateCustomReward(this TwitcherAPI api, string broadcasterId, string title, int cost, string? prompt = null, bool isEnable = true, string? backgroundColor = null, bool isUserInputRequired = false, int? maxPerStream = null, int? maxPerUserPerStream = null, int? globalCooldownSeconds = null, bool shouldRedemptionsSkipRequestQueue = false)
     {
-        var requestBody = new CustomRewardRequestBody(title, cost, prompt,
+        var requestBody = new CreateCustomRewardRequestBody(title, cost, prompt,
             isEnable != true ? isEnable : null,
             backgroundColor,
             isUserInputRequired != false ? isUserInputRequired : null,
@@ -41,11 +41,11 @@ public static class CustomRewardRequests
     /// Required scope: '<inheritdoc cref="Scopes.ChannelManageRedemptions"/>'</summary>
     /// <param name="api">The instance of the api that should request</param>
     /// <param name="broadcasterId">Provided <paramref name="broadcasterId" /> must match the userId in the user OAuth token</param>
-    /// <param name="body">Request body. <see cref="CustomRewardRequestBody.Title"/> and <see cref="CustomRewardRequestBody.Cost"/> are required</param>
+    /// <param name="body">Request body. <see cref="CreateCustomRewardRequestBody.Title"/> and <see cref="CreateCustomRewardRequestBody.Cost"/> are required</param>
     /// <returns>Response</returns>
     /// <exception cref="NotValidatedException"></exception>
     /// <exception cref="TwitchErrorException"></exception>
-    public static async Task<CustomRewardResponseBody> CreateCustomReward(this TwitcherAPI api, string broadcasterId, CustomRewardRequestBody body)
+    public static async Task<CustomRewardResponseBody> CreateCustomReward(this TwitcherAPI api, string broadcasterId, CreateCustomRewardRequestBody body)
     {
         var request = new RestRequest("helix/channel_points/custom_rewards", Method.Post)
             .AddQueryParameter("broadcaster_id", broadcasterId)
@@ -117,9 +117,9 @@ public static class CustomRewardRequests
     /// <returns>Response</returns>
     /// <exception cref="NotValidatedException"></exception>
     /// <exception cref="TwitchErrorException"></exception>
-    public static Task<CustomRewardResponseBody> UpdateCustomReward(this TwitcherAPI api, string broadcasterId, Guid id, string? title = null, int? cost = null, string? prompt = null, bool? isEnable = null, string? backgroundColor = null, bool? isUserInputRequired = null, bool? isMaxPerStreamEnabled = null, int? maxPerStream = null, bool? isMaxPerUserPerStreamEnabled = null, int? maxPerUserPerStream = null, bool? isGlobalCooldownEnabled = null, int? globalCooldownSeconds = null, bool? shouldRedemptionsSkipRequestQueue = null)
+    public static Task<CustomRewardResponseBody> UpdateCustomReward(this TwitcherAPI api, string broadcasterId, Guid id, string? title = null, int? cost = null, string? prompt = null, bool? isEnable = null, string? backgroundColor = null, bool? isUserInputRequired = null, bool? isMaxPerStreamEnabled = null, int? maxPerStream = null, bool? isMaxPerUserPerStreamEnabled = null, int? maxPerUserPerStream = null, bool? isGlobalCooldownEnabled = null, int? globalCooldownSeconds = null, bool? isPaused = null, bool? shouldRedemptionsSkipRequestQueue = null)
     {
-        var requestBody = new CustomRewardRequestBody(title, cost, prompt,
+        var requestBody = new UpdateCustomRewardRequestBody(title, cost, prompt,
             isEnable,
             backgroundColor,
             isUserInputRequired,
@@ -129,6 +129,7 @@ public static class CustomRewardRequests
             maxPerUserPerStream,
             isGlobalCooldownEnabled,
             globalCooldownSeconds,
+            isPaused,
             shouldRedemptionsSkipRequestQueue);
 
         return UpdateCustomReward(api, broadcasterId, id, requestBody);
@@ -143,7 +144,7 @@ public static class CustomRewardRequests
     /// <returns>Response</returns>
     /// <exception cref="NotValidatedException"></exception>
     /// <exception cref="TwitchErrorException"></exception>
-    public static async Task<CustomRewardResponseBody> UpdateCustomReward(this TwitcherAPI api, string broadcasterId, Guid id, CustomRewardRequestBody body)
+    public static async Task<CustomRewardResponseBody> UpdateCustomReward(this TwitcherAPI api, string broadcasterId, Guid id, UpdateCustomRewardRequestBody body)
     {
         var request = new RestRequest("helix/channel_points/custom_rewards", Method.Patch)
             .AddQueryParameter("broadcaster_id", broadcasterId)

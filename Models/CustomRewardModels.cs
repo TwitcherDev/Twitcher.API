@@ -14,11 +14,31 @@
 /// <param name="IsGlobalCooldownEnabled">Whether a cooldown is enabled</param>
 /// <param name="GlobalCooldownSeconds">The cooldown in seconds if enabled</param>
 /// <param name="ShouldRedemptionsSkipRequestQueue">Should redemptions be set to <see cref="RedemptionStatus.FULFILLED" /> status immediately when redeemed and skip the request queue instead of the normal <see cref="RedemptionStatus.Unfulfilled" /> status</param>
-public record CustomRewardRequestBody(string? Title = null, int? Cost = null, string? Prompt = null, bool? IsEnabled = null, string? BackgroundColor = null, bool? IsUserInputRequired = null,
+public record CreateCustomRewardRequestBody(string Title, int Cost, string? Prompt = null, bool? IsEnabled = null, string? BackgroundColor = null, bool? IsUserInputRequired = null,
     bool? IsMaxPerStreamEnabled = null, int? MaxPerStream = null,
     bool? IsMaxPerUserPerStreamEnabled = null, int? MaxPerUserPerStream = null,
     bool? IsGlobalCooldownEnabled = null, int? GlobalCooldownSeconds = null,
     bool? ShouldRedemptionsSkipRequestQueue = null);
+
+/// <param name="Title">The title of the reward</param>
+/// <param name="Cost">The cost of the reward</param>
+/// <param name="Prompt">The prompt for the viewer when redeeming the reward</param>
+/// <param name="IsEnabled">Is the reward currently enabled, if false the reward won’t show up to viewers</param>
+/// <param name="BackgroundColor">Custom background color for the reward. Format: Hex with # prefix</param>
+/// <param name="IsUserInputRequired">Does the user need to enter information when redeeming the reward</param>
+/// <param name="IsMaxPerStreamEnabled">Whether a maximum per stream is enabled</param>
+/// <param name="MaxPerStream">The maximum number per stream if enabled</param>
+/// <param name="IsMaxPerUserPerStreamEnabled">Whether a maximum per user per stream is enabled</param>
+/// <param name="MaxPerUserPerStream">The maximum number per user per stream if enabled</param>
+/// <param name="IsGlobalCooldownEnabled">Whether a cooldown is enabled</param>
+/// <param name="GlobalCooldownSeconds">The cooldown in seconds if enabled</param>
+/// <param name="IsPaused">Is the reward currently paused, if true viewers cannot redeem</param>
+/// <param name="ShouldRedemptionsSkipRequestQueue">Should redemptions be set to <see cref="RedemptionStatus.FULFILLED" /> status immediately when redeemed and skip the request queue instead of the normal <see cref="RedemptionStatus.Unfulfilled" /> status</param>
+public record UpdateCustomRewardRequestBody(string? Title = null, int? Cost = null, string? Prompt = null, bool? IsEnabled = null, string? BackgroundColor = null, bool? IsUserInputRequired = null,
+    bool? IsMaxPerStreamEnabled = null, int? MaxPerStream = null,
+    bool? IsMaxPerUserPerStreamEnabled = null, int? MaxPerUserPerStream = null,
+    bool? IsGlobalCooldownEnabled = null, int? GlobalCooldownSeconds = null,
+    bool? IsPaused = null, bool? ShouldRedemptionsSkipRequestQueue = null);
 
 /// <param name="BroadcasterId">ID of the channel the reward is for</param>
 /// <param name="BroadcasterLogin">Broadcaster user login name</param>
