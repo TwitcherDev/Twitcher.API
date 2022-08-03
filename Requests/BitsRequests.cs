@@ -1,5 +1,6 @@
 ﻿namespace Twitcher.API.Requests;
 
+/// <summary>A class with extension methods for requesting bits</summary>
 public static class BitsRequests
 {
     /// <summary>Gets a ranked list of Bits leaderboard information for an authorized broadcaster.

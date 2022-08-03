@@ -13,7 +13,7 @@
 /// <param name="MaxPerUserPerStream">The maximum number per user per stream if enabled</param>
 /// <param name="IsGlobalCooldownEnabled">Whether a cooldown is enabled</param>
 /// <param name="GlobalCooldownSeconds">The cooldown in seconds if enabled</param>
-/// <param name="ShouldRedemptionsSkipRequestQueue">Should redemptions be set to <see cref="RedemptionStatus.FULFILLED" /> status immediately when redeemed and skip the request queue instead of the normal <see cref="RedemptionStatus.Unfulfilled" /> status</param>
+/// <param name="ShouldRedemptionsSkipRequestQueue">Should redemptions be set to <see cref="RedemptionStatus.Fulfilled" /> status immediately when redeemed and skip the request queue instead of the normal <see cref="RedemptionStatus.Unfulfilled" /> status</param>
 public record CreateCustomRewardRequestBody(string Title, int Cost, string? Prompt = null, bool? IsEnabled = null, string? BackgroundColor = null, bool? IsUserInputRequired = null,
     bool? IsMaxPerStreamEnabled = null, int? MaxPerStream = null,
     bool? IsMaxPerUserPerStreamEnabled = null, int? MaxPerUserPerStream = null,
@@ -33,7 +33,7 @@ public record CreateCustomRewardRequestBody(string Title, int Cost, string? Prom
 /// <param name="IsGlobalCooldownEnabled">Whether a cooldown is enabled</param>
 /// <param name="GlobalCooldownSeconds">The cooldown in seconds if enabled</param>
 /// <param name="IsPaused">Is the reward currently paused, if true viewers cannot redeem</param>
-/// <param name="ShouldRedemptionsSkipRequestQueue">Should redemptions be set to <see cref="RedemptionStatus.FULFILLED" /> status immediately when redeemed and skip the request queue instead of the normal <see cref="RedemptionStatus.Unfulfilled" /> status</param>
+/// <param name="ShouldRedemptionsSkipRequestQueue">Should redemptions be set to <see cref="RedemptionStatus.Fulfilled" /> status immediately when redeemed and skip the request queue instead of the normal <see cref="RedemptionStatus.Unfulfilled" /> status</param>
 public record UpdateCustomRewardRequestBody(string? Title = null, int? Cost = null, string? Prompt = null, bool? IsEnabled = null, string? BackgroundColor = null, bool? IsUserInputRequired = null,
     bool? IsMaxPerStreamEnabled = null, int? MaxPerStream = null,
     bool? IsMaxPerUserPerStreamEnabled = null, int? MaxPerUserPerStream = null,
@@ -57,7 +57,7 @@ public record UpdateCustomRewardRequestBody(string? Title = null, int? Cost = nu
 /// <param name="GlobalCooldownSetting">Whether a cooldown is enabled and what the cooldown is</param>
 /// <param name="IsPaused">Is the reward currently paused, if true viewers can’t redeem</param>
 /// <param name="IsInStock">Is the reward currently in stock, if false viewers can’t redeem</param>
-/// <param name="ShouldRedemptionsSkipRequestQueue">Should redemptions be set to <see cref="RedemptionStatus.FULFILLED" /> status immediately when redeemed and skip the request queue instead of the normal <see cref="RedemptionStatus.Unfulfilled" /> status</param>
+/// <param name="ShouldRedemptionsSkipRequestQueue">Should redemptions be set to <see cref="RedemptionStatus.Fulfilled" /> status immediately when redeemed and skip the request queue instead of the normal <see cref="RedemptionStatus.Unfulfilled" /> status</param>
 /// <param name="RedemptionsRedeemedCurrentStream">The number of redemptions redeemed during the current live stream. 0 if the broadcasters stream isn’t live or max_per_stream_setting isn’t enabled</param>
 /// <param name="CooldownExpiresAt">Time of the cooldown expiration. Null if the reward isn’t on cooldown</param>
 public record CustomRewardResponseBody(string BroadcasterId, string BroadcasterLogin, string BroadcasterName, Guid Id, string Title, string? Prompt, int Cost,
@@ -104,6 +104,6 @@ public record CustomRewardRedemptionResponseBody(string BroadcasterId, string Br
 /// <param name="Cost">The cost of the reward</param>
 public record CustomRewardShort(Guid Id, string Title, string? Prompt, int Cost);
 
-/// <param name="Status">The new status to set redemptions to. Updating to <see cref="RedemptionStatus.CANCELED"/> will refund the user their Channel Points</param>
+/// <param name="Status">The new status to set redemptions to. Updating to <see cref="RedemptionStatus.Canceled"/> will refund the user their Channel Points</param>
 public record CustomRewardRedemptionStatusRequestBody(RedemptionStatus Status);
 #endregion

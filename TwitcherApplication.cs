@@ -12,9 +12,9 @@ public class TwitcherApplication
 
     private StateCollection? _states;
 
-    /// <param name="clientId">Id of the application</param>
+    /// <summary>Id of the application</summary>
     public string ClientId { get; set; }
-    /// <param name="clientSecret">Secret of the application</param>
+    /// <summary>Secret of the application</summary>
     public string ClientSecret { get; set; }
 
     /// <summary>Invoked when the token of one of the api has been changed</summary>

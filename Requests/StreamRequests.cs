@@ -1,5 +1,6 @@
 ﻿namespace Twitcher.API.Requests;
 
+/// <summary>A class with extension methods for requesting streams</summary>
 public static class StreamRequests
 {
     /// <summary>Gets information about active streams. Streams are returned sorted by number of current viewers, in descending order</summary>

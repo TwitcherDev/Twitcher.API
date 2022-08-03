@@ -1,5 +1,6 @@
 ﻿namespace Twitcher.API.Requests;
 
+/// <summary>A class with extension methods for requesting whispers</summary>
 public static class WhisperRequests
 {
     /// <summary>Sends a whisper message to the specified user.

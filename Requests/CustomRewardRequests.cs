@@ -1,5 +1,6 @@
 ﻿namespace Twitcher.API.Requests;
 
+/// <summary>A class with extension methods for requesting custom rewards</summary>
 public static class CustomRewardRequests
 {
     #region Rewards
@@ -16,7 +17,7 @@ public static class CustomRewardRequests
     /// <param name="maxPerStream">The maximum number per stream. If <see langword="null"/>, then off</param>
     /// <param name="maxPerUserPerStream">The maximum number per user per stream. If <see langword="null"/>, then off</param>
     /// <param name="globalCooldownSeconds">The cooldown in seconds. If <see langword="null"/>, then off</param>
-    /// <param name="shouldRedemptionsSkipRequestQueue">Should redemptions be set to <see cref="RedemptionStatus.FULFILLED" /> status immediately when redeemed and skip the request queue instead of the normal <see cref="RedemptionStatus.Unfulfilled" /> status</param>
+    /// <param name="shouldRedemptionsSkipRequestQueue">Should redemptions be set to <see cref="RedemptionStatus.Fulfilled" /> status immediately when redeemed and skip the request queue instead of the normal <see cref="RedemptionStatus.Unfulfilled" /> status</param>
     /// <returns>Response</returns>
     /// <exception cref="NotValidatedException"></exception>
     /// <exception cref="TwitchErrorException"></exception>
@@ -113,7 +114,8 @@ public static class CustomRewardRequests
     /// <param name="maxPerUserPerStream">The maximum number per user per stream</param>
     /// <param name="isGlobalCooldownEnabled">Whether a cooldown is enabled</param>
     /// <param name="globalCooldownSeconds">The cooldown in seconds</param>
-    /// <param name="shouldRedemptionsSkipRequestQueue">Should redemptions be set to <see cref="RedemptionStatus.FULFILLED" /> status immediately when redeemed and skip the request queue instead of the normal <see cref="RedemptionStatus.Unfulfilled" /> status</param>
+    /// <param name="isPaused">Is the reward currently paused, if true viewers cannot redeem</param>
+    /// <param name="shouldRedemptionsSkipRequestQueue">Should redemptions be set to <see cref="RedemptionStatus.Fulfilled" /> status immediately when redeemed and skip the request queue instead of the normal <see cref="RedemptionStatus.Unfulfilled" /> status</param>
     /// <returns>Response</returns>
     /// <exception cref="NotValidatedException"></exception>
     /// <exception cref="TwitchErrorException"></exception>

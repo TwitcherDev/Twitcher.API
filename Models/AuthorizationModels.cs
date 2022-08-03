@@ -1,17 +1,15 @@
 ﻿namespace Twitcher.API.Models;
 
-/// <param name="AccessToken"></param>
-/// <param name="RefreshToken"></param>
-public record AuthorizationCodeResponseBody(string AccessToken, string RefreshToken);
+internal record AuthorizationCodeResponseBody(string AccessToken, string RefreshToken);
 
-/// <param name="AccessToken"></param>
-/// <param name="RefreshToken"></param>
-/// <param name="Scopes"></param>
-/// <param name="ExpiresIn"></param>
+/// <param name="AccessToken">New access token</param>
+/// <param name="RefreshToken">New refresh token</param>
+/// <param name="Scopes">Token scopes</param>
+/// <param name="ExpiresIn">Token expiration time</param>
 public record RefreshResponseBody(string AccessToken, string RefreshToken, string[] Scopes, int ExpiresIn);
 
-/// <param name="AccessToken"></param>
-/// <param name="RefreshToken"></param>
-/// <param name="Scopes"></param>
-/// <param name="ExpiresIn"></param>
+/// <param name="Scopes">Token scopes</param>
+/// <param name="ExpiresIn">Token expiration time</param>
+/// <param name="Login">Token owner login</param>
+/// <param name="UserId">Token owner user id</param>
 public record ValidateResponseBody(string[] Scopes, int ExpiresIn, string Login, string UserId);

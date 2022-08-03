@@ -1,9 +1,6 @@
 ﻿namespace Twitcher.API.Models;
 
-public record ErrorResponse(string? Error, int Status, string? Message)
-{
-    public override string ToString() => $"{Status}{(Error != null ? $" ({Error})" : "")}: {Message ?? "No message"}";
-}
+internal record ErrorResponse(string? Error, int Status, string? Message);
 
 /// <typeparam name="T">Type of response data</typeparam>
 /// <param name="Data">Response data</param>

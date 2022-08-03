@@ -1,5 +1,6 @@
 ﻿namespace Twitcher.API.Requests;
 
+/// <summary>A class with extension methods for requesting analytics</summary>
 public static class AnalyticsRequests
 {
     #region GetExtensionAnalytics

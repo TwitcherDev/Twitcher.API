@@ -1,4 +1,6 @@
 ﻿namespace Twitcher.API.Requests;
+
+/// <summary>A class with extension methods for requesting videos</summary>
 public static class VideoRequests
 {
     /// <summary>Gets video information by one or more video <paramref name="ids"/></summary>

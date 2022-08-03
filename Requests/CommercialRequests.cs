@@ -1,5 +1,6 @@
 ﻿namespace Twitcher.API.Requests;
 
+/// <summary>A class with extension methods for requesting commercials</summary>
 public static class CommercialRequests
 {
     /// <summary>Starts a commercial on a specified channel.
