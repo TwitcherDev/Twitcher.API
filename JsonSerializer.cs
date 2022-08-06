@@ -15,9 +15,20 @@ internal class TwitcherJsonSerializer : IRestSerializer
             ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeStrategy() }
         };
         settings.Converters.Add(new DateTimeConverter());
-        settings.Converters.Add(new StringEnumUpperConverter<RedemptionStatus>(RedemptionStatus.Unfulfilled));
-        settings.Converters.Add(new StringEnumUpperConverter<SortOrder>(SortOrder.Oldest));
-        settings.Converters.Add(new StringEnumConverter(new SnakeStrategy()));
+        settings.Converters.Add(new StringEnumConverter<BroadcasterType>(BroadcasterType.None, false));
+        settings.Converters.Add(new StringEnumConverter<CheermoteType>(CheermoteType.None, false));
+        settings.Converters.Add(new StringEnumConverter<ExtensionType>(ExtensionType.Component, false));
+        settings.Converters.Add(new StringEnumConverter<LeaderboardTimePeriod>(LeaderboardTimePeriod.All, false));
+        settings.Converters.Add(new StringEnumConverter<ReasonType>(ReasonType.Other, false));
+        settings.Converters.Add(new StringEnumConverter<RedemptionStatus>(RedemptionStatus.Unfulfilled, true));
+        settings.Converters.Add(new StringEnumConverter<SortOrder>(SortOrder.Oldest, true));
+        settings.Converters.Add(new StringEnumConverter<SourceContextType>(SourceContextType.Chat, false));
+        settings.Converters.Add(new StringEnumConverter<UserType>(UserType.None, false));
+        settings.Converters.Add(new StringEnumConverter<VideoSortOrder>(VideoSortOrder.Time, false));
+        settings.Converters.Add(new StringEnumConverter<VideoTimePeriod>(VideoTimePeriod.All, false));
+        settings.Converters.Add(new StringEnumConverter<VideoType>(VideoType.Upload, false));
+        settings.Converters.Add(new StringEnumConverter<ViewableType>(ViewableType.Public, false));
+        //settings.Converters.Add(new StringEnumConverter(new SnakeStrategy()));
         return settings;
     }
 
@@ -111,13 +122,15 @@ internal class SnakeStrategy : NamingStrategy
     }
 }
 
-internal class StringEnumUpperConverter<T> : JsonConverter<T> where T : struct
+internal class StringEnumConverter<T> : JsonConverter<T> where T : struct
 {
     private readonly T _defaultValue;
+    private readonly bool _isUpper;
 
-    public StringEnumUpperConverter(T defaultValue)
+    public StringEnumConverter(T defaultValue, bool isUpper)
     {
         _defaultValue = defaultValue;
+        _isUpper = isUpper;
     }
 
     public override T ReadJson(JsonReader reader, Type objectType, T existingValue, bool hasExistingValue, JsonSerializer serializer)
@@ -134,6 +147,11 @@ internal class StringEnumUpperConverter<T> : JsonConverter<T> where T : struct
         if (string.IsNullOrEmpty(str))
             writer.WriteNull();
         else
-            writer.WriteValue(SnakeStrategy.CamelToSnake(str).ToUpper());
+        {
+            var val = SnakeStrategy.CamelToSnake(str);
+            if (_isUpper)
+                val = val.ToUpper();
+            writer.WriteValue(val);
+        }
     }
 }
