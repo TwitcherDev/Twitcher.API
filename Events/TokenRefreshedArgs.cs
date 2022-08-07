@@ -1,19 +1,25 @@
 ﻿namespace Twitcher.API.Events;
 
 /// <summary>Contains new tokens and owner</summary>
-public class TokenRefreshedArgs : EventArgs
+public class APITokenRefreshedArgs : EventArgs
 {
-    /// <summary>Owner tag</summary>
-    public string? Tag { get; set; }
-    /// <summary>Owner user id</summary>
+    /// <summary>Api name</summary>
+    public string Name { get; set; }
+    /// <summary>New access tokens</summary>
+    public string AccessToken { get; set; }
+    /// <summary>New refresh tokens</summary>
+    public string RefreshToken { get; set; }
+    /// <summary>Twitch id of the token owner</summary>
     public string UserId { get; set; }
-    /// <summary>New tokens</summary>
-    public string Tokens { get; set; }
 
-    internal TokenRefreshedArgs(string? tag, string userId, string tokens)
+    /// <summary>Access and refresh tokens in 'access:refresh' format</summary>
+    public string Tokens => AccessToken + ':' + RefreshToken;
+
+    internal APITokenRefreshedArgs(string name, string accessToken, string refreshToken, string userId)
     {
-        Tag = tag;
+        Name = name;
+        AccessToken = accessToken;
+        RefreshToken = refreshToken;
         UserId = userId;
-        Tokens = tokens;
     }
 }

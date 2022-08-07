@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
+﻿using Newtonsoft.Json.Serialization;
 using RestSharp.Serializers;
 using System.Text;
 
