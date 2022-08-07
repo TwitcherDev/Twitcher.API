@@ -1,26 +1,25 @@
 ﻿using Microsoft.Extensions.Logging;
-using Twitcher.API.Events;
 
 namespace Twitcher.API;
 
-/// <summary>Class for managing and grouping TwitchAPI instances in the application</summary>
+/// <summary>Combines tools for creating, storing, and working with <see cref="TwitcherAPI"/> in the application</summary>
 public class TwitcherApplication
 {
-    private readonly List<(string? tag, string userId, TwitcherAPI api)> _apis;
     private readonly ILoggerFactory? _loggerFactory;
     private readonly ILogger? _logger;
 
     private StateCollection? _states;
+    private TwitcherAPICollection? _collection;
 
     /// <summary>Id of the application</summary>
-    public string ClientId { get; set; }
+    public string ClientId { get; }
     /// <summary>Secret of the application</summary>
-    public string ClientSecret { get; set; }
+    public string ClientSecret { get; }
 
-    /// <summary>Invoked when the token of one of the api has been changed</summary>
-    public event EventHandler<TokenRefreshedArgs>? TokenRefreshed;
+    /// <summary>Managing <see cref="TwitcherAPI"/> instances in the application for constant access without creating unnecessary instances. Use <see cref="UseAPICollection"/> for enable</summary>
+    public TwitcherAPICollection Collection => _collection ?? throw new NotSupportedException($"Call {nameof(UseAPICollection)} for enable {nameof(Collection)}");
 
-    /// <summary>Create an instance of TwitcherApplication</summary>
+    /// <summary>Create an instance of <see cref="TwitcherApplication"/></summary>
     /// <param name="clientId">Id of the application</param>
     /// <param name="clientSecret">Secret of the application</param>
     /// <param name="loggerFactory">ILoggerFactory for logging</param>
@@ -32,15 +31,17 @@ public class TwitcherApplication
 
         ClientId = clientId;
         ClientSecret = clientSecret;
-        _apis = new List<(string? tag, string userId, TwitcherAPI api)>();
     }
 
-    /// <summary>Enable GenerateState, adds a randomly generated state to GenerateAuthorizeLink and a check to CreateAPI</summary>
-    /// <param name="stateLiveTime">Lifetime of all state, default: 24 hours</param>
+    /// <summary>Enable <see cref="GenerateState"/> and <see cref="AuthorizeCode(string, string, string)"/></summary>
+    /// <param name="stateLiveTime">Lifetime of every state, default: 24 hours</param>
     /// <param name="statesLimit">Maximum number of unused states, default: 1000</param>
-    /// <param name="stateLength">Length of all states, dafault: 32</param>
+    /// <param name="stateLength">Length of states, dafault: 32</param>
     public void UseAuthorizeStates(TimeSpan? stateLiveTime = default, int statesLimit = 1000, int stateLength = 32)
     {
+        if (_states != null)
+            throw new NotSupportedException($"{nameof(StateCollection)} already in use");
+
         _states = new StateCollection(stateLiveTime ?? TimeSpan.FromHours(24), statesLimit, stateLength);
     }
 
@@ -50,19 +51,19 @@ public class TwitcherApplication
     public string GenerateState()
     {
         if (_states == default)
-            throw new NullReferenceException("You cannot use GenerateState without UseAuthorizeStates");
+            throw new NotSupportedException($"You cannot use {nameof(GenerateState)} without {nameof(UseAuthorizeStates)}");
         var state = _states.CreateState();
         _logger?.LogTrace("State created: {state}", state);
         return state;
     }
 
-    /// <summary>Creates a link to generate a new token using Authorization code grant flow. Adds state, if <see cref="UseAuthorizeStates"/> was called</summary>
+    /// <summary>Creates a link to generate a new token using Authorization code grant flow. Adds random state, if <see cref="UseAuthorizeStates"/> was called</summary>
     /// <param name="redirectUri">Redirect uri</param>
     /// <param name="scopes">Scopes</param>
     /// <returns>Created uri</returns>
     public string GenerateAuthorizeLink(string redirectUri, IEnumerable<string> scopes) => GenerateAuthorizeLink(redirectUri, string.Join(' ', scopes));
 
-    /// <summary>Creates a link to generate a new token using Authorization code grant flow. Adds state, if <see cref="UseAuthorizeStates"/> was called</summary>
+    /// <summary>Creates a link to generate a new token using Authorization code grant flow. Adds random state, if <see cref="UseAuthorizeStates"/> was called</summary>
     /// <param name="redirectUri">Redirect uri</param>
     /// <param name="scopes">Scopes separated by a space</param>
     /// <returns>Created uri</returns>
@@ -73,18 +74,17 @@ public class TwitcherApplication
         return $"https://id.twitch.tv/oauth2/authorize?response_type=code&client_id={ClientId}&redirect_uri={redirectUri}&scope={scopes}";
     }
 
-    /// <summary>Using authorization code grant flow with state for generate new token</summary>
+    /// <summary>Using authorization code grant flow with state for generate new token. Call <see cref="UseAuthorizeStates"/> to enable</summary>
     /// <param name="code">Code</param>
     /// <param name="redirectUri">Redirect uri</param>
     /// <param name="state">State that was generated by this application</param>
-    /// <param name="tag">Tag for grouping apis</param>
-    /// <returns>Instance of TwitchAPI created from the received token</returns>
+    /// <returns>Instance of <see cref="TwitcherAPI"/> created from the received token</returns>
     /// <exception cref="WrongStateException"></exception>
     /// <exception cref="TwitchErrorException"></exception>
-    public Task<TwitcherAPI> CreateAPI(string code, string redirectUri, string state, string? tag = null)
+    public Task<TwitcherAPI> AuthorizeCode(string code, string redirectUri, string state)
     {
         if (_states == default)
-            throw new NullReferenceException("You cannot use CreateAPI with state without UseAuthorizeStates");
+            throw new NotSupportedException($"You cannot use {nameof(AuthorizeCode)} with state without {nameof(UseAuthorizeStates)}");
 
         if (!_states.PassingState(state))
         {
@@ -94,104 +94,52 @@ public class TwitcherApplication
 
         _logger?.LogTrace("State validated: {state}", state);
 
-        return CreateAPI(code, redirectUri, tag);
+        return AuthorizeCode(code, redirectUri);
     }
-
 
     /// <summary>Using authorization code grant flow for generate new token</summary>
     /// <param name="code">Code</param>
     /// <param name="redirectUri">Redirect uri</param>
-    /// <param name="tag">Tag for grouping apis</param>
-    /// <returns>Instance of TwitchAPI created from the received token</returns>
-    /// <exception cref="WrongStateException"></exception>
+    /// <returns>Instance of <see cref="TwitcherAPI"/> created from the received token</returns>
     /// <exception cref="TwitchErrorException"></exception>
-    public async Task<TwitcherAPI> CreateAPI(string code, string redirectUri, string? tag = null)
+    public Task<TwitcherAPI> AuthorizeCode(string code, string redirectUri)
     {
-        var api = await TwitcherAPI.AuthorizeCode(code, redirectUri, ClientId, ClientSecret, _loggerFactory?.CreateLogger<TwitcherAPI>());
-        await AddAPI(api, tag);
+        return TwitcherAPI.AuthorizeCode(code, redirectUri, ClientId, ClientSecret, _loggerFactory?.CreateLogger<TwitcherAPI>());
+    }
+
+    /// <summary>Creates a new instance of the <see cref="TwitcherAPI"/> and validates it</summary>
+    /// <param name="tokens">Access and refresh tokens in 'access:refresh' format, which will be used to create a new instance of the <see cref="TwitcherAPI"/></param>
+    /// <returns>Created <see cref="TwitcherAPI"/> instance</returns>
+    /// <exception cref="TwitchErrorException"></exception>
+    public Task<TwitcherAPI> CreateAPI(string tokens)
+    {
+        var api = new TwitcherAPI(tokens, ClientId, ClientSecret, _loggerFactory?.CreateLogger<TwitcherAPI>());
+        return ValidateAPI(api);
+    }
+
+    /// <summary>Creates a new instance of the <see cref="TwitcherAPI"/> and validates it</summary>
+    /// <param name="access">Access token, which will be used to create a new instance of the <see cref="TwitcherAPI"/></param>
+    /// <param name="refresh">Refresh token pair for <paramref name="access"/></param>
+    /// <returns>Created <see cref="TwitcherAPI"/> instance</returns>
+    /// <exception cref="TwitchErrorException"></exception>
+    public Task<TwitcherAPI> CreateAPI(string access, string refresh)
+    {
+        var api = new TwitcherAPI(access, refresh, ClientId, ClientSecret, _loggerFactory?.CreateLogger<TwitcherAPI>());
+        return ValidateAPI(api);
+    }
+
+    private static async Task<TwitcherAPI> ValidateAPI(TwitcherAPI api)
+    {
+        await api.Validate();
         return api;
     }
 
-    /// <summary>Create an instance of TwitcherAPI using tokens and add it to to the application</summary>
-    /// <param name="tokens">Access and refresh tokens in 'access:refresh' format</param>
-    /// <param name="tag">Tag for grouping apis</param>
-    /// <exception cref="ArgumentException"></exception>
-    /// <exception cref="TwitchErrorException"></exception>
-    public async Task<TwitcherAPI> AddAPI(string tokens, string? tag = null)
+    /// <summary>Enable <see cref="Collection"/> to manage <see cref="TwitcherAPI"/> instances in the application for constant access without creating unnecessary instances</summary>
+    public void UseAPICollection()
     {
-        var api = new TwitcherAPI(tokens, ClientId, ClientSecret) { Logger = _loggerFactory?.CreateLogger<TwitcherAPI>() };
-        await AddAPI(api, tag);
-        return api;
-    }
+        if (_collection != null)
+            throw new NotSupportedException($"{nameof(TwitcherAPICollection)} already in use");
 
-    /// <summary>Adds an <paramref name="api"/> to the application</summary>
-    /// <param name="api">Api</param>
-    /// <param name="tag">Tag for grouping apis</param>
-    /// <exception cref="TwitchErrorException"></exception>
-    public async Task AddAPI(TwitcherAPI api, string? tag = null)
-    {
-        api.TokenRefreshed += (s, e) => Api_TokenRefreshed(tag, (TwitcherAPI?)s, e.Tokens);
-
-        var response = await api.Validate();
-
-        if (RemoveAPI(response.UserId, tag))
-            _logger?.LogDebug("User '{userId}' ('{tag}') old api removed", api.UserId, tag);
-
-        lock(_apis)
-            _apis.Add((tag, response.UserId, api));
-        _logger?.LogDebug("User '{userId}' ('{tag}') api added", api.UserId, tag);
-    }
-
-    private void Api_TokenRefreshed(string? tag, TwitcherAPI? api, string tokens)
-    {
-        if (api == default || string.IsNullOrEmpty(api.UserId))
-            return;
-        TokenRefreshed?.Invoke(this, new TokenRefreshedArgs(tag, api.UserId, tokens));
-        _logger?.LogDebug("User '{userId}' ('{tag}') token refreshed", api.UserId, tag);
-    }
-    
-    /// <summary>Get all apis by <paramref name="tag"/></summary>
-    /// <param name="tag">Tag</param>
-    /// <returns>Apis enumerable</returns>
-    public List<(string userId, TwitcherAPI api)> GetAPIsByTag(string? tag)
-    {
-        lock (_apis)
-            return _apis.Where(a => a.tag == tag).Select(a => (a.userId, a.api)).ToList();
-    }
-
-    /// <summary>Get api by <paramref name="userId"/> and <paramref name="tag"/></summary>
-    /// <param name="userId">UserId of the returned api</param>
-    /// <param name="tag">Tag of the returned api</param>
-    /// <returns>Api</returns>
-    public TwitcherAPI? GetAPI(string userId, string? tag = null)
-    {
-        lock (_apis)
-            return _apis.FirstOrDefault(a => a.tag == tag && a.userId == userId).api;
-    }
-
-    /// <summary>Remove all api by <paramref name="tag"/></summary>
-    /// <param name="tag">Tag</param>
-    /// <returns>The number of removed elements</returns>
-    public int RemoveAPIsByTag(string? tag)
-    {
-        lock (_apis)
-            return _apis.RemoveAll(a => a.tag == tag);
-    }
-
-    /// <summary>Remove api by <paramref name="userId"/> and <paramref name="tag"/></summary>
-    /// <param name="userId">UserId of the removed</param>
-    /// <param name="tag">Tag of the removed</param>
-    /// <returns><see langword="true"/> if api removed, otherwise <see langword="false"/></returns>
-    public bool RemoveAPI(string userId, string? tag = null)
-    {
-        lock (_apis)
-        {
-            var api = _apis.FirstOrDefault(a => a.tag == tag && a.userId == userId).api;
-            if (api == default)
-                return false;
-
-            _apis.Remove((tag, userId, api));
-            return true;
-        }
+        _collection = new TwitcherAPICollection(ClientId, ClientSecret, _loggerFactory);
     }
 }
