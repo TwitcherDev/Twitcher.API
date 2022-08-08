@@ -143,9 +143,6 @@ public class TwitcherAPI
     /// <exception cref="TwitchErrorException"></exception>
     public async Task Refresh()
     {
-        if (!_isValidated)
-            throw new NotValidatedException();
-
         if (!_isRefreshable)
             throw new NotSupportedException("Refresh not supported without refresh token and client secret");
 
