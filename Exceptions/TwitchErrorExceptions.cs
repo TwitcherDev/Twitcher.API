@@ -1,15 +1,18 @@
 ﻿namespace Twitcher.API.Exceptions;
 
-/// <summary>Not success status in response</summary>
+/// <summary>Any not success status in response</summary>
 public class TwitchErrorException : Exception
 {
     /// <summary>HTTP Status code</summary>
-    public int Status { get; set; }
+    public int Status { get; }
+    /// <summary>Error message from twitch</summary>
+    public string TwitchMessage{ get; }
 
     internal TwitchErrorException(int status, string? error, string? message) :
         base("Error from twitch " + status.ToString() + (error != null ? $" ({error})" : "") + ": " + message ?? "No message")
     {
         Status = status;
+        TwitchMessage = message ?? string.Empty;
     }
 }
 
@@ -35,6 +38,12 @@ public class ForbiddenException : TwitchErrorException
 public class NotFoundException : TwitchErrorException
 {
     internal NotFoundException(string? message) : base(404, "Not Found", message) { }
+}
+
+/// <summary>429 Too Many Requests status in response</summary>
+public class TooManyRequestsException : TwitchErrorException
+{
+    internal TooManyRequestsException(string? message) : base(429, "Too Many Requests", message) { }
 }
 
 /// <summary>500-599 status in response: something bad happened on twitch side</summary>
