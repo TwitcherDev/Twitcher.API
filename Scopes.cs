@@ -140,4 +140,15 @@ public static class Scopes
 
     /// <summary>user:manage:whispers</summary>
     public static string UserManageWhispers => "user:manage:whispers";
+
+    /// <summary>channel:moderate</summary>
+    public static string ChannelModerate => "channel:moderate";
+    /// <summary>chat:edit</summary>
+    public static string ChatEdit => "chat:edit";
+    /// <summary>chat:read</summary>
+    public static string ChatRead => "chat:read";
+    /// <summary>whispers:read</summary>
+    public static string WhispersRead => "whispers:read";
+    /// <summary>whispers:edit</summary>
+    public static string WhispersEdit => "whispers:edit";
 }
