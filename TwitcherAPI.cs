@@ -287,6 +287,9 @@ public class TwitcherAPI
         if (status == HttpStatusCode.NotFound)
             return new NotFoundException(error?.Message);
 
+        if (status == HttpStatusCode.TooManyRequests)
+            return new TooManyRequestsException(error?.Message);
+
         if (500 <= (int)status && (int)status < 600)
             return new ServerErrorException((int)status, error?.Error, error?.Message);
 
