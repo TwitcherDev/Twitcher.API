@@ -16,7 +16,7 @@ public class TwitcherAPICollection
     public string ClientSecret { get; }
 
     /// <summary>Invoked when the token of one of the <see cref="TwitcherAPI"/> instances in collection has been changed</summary>
-    public event EventHandler<APITokenRefreshedArgs>? TokenRefreshed;
+    public event EventHandler<APITokenRefreshedArgs>? OnTokenRefreshed;
 
     /// <summary>Create an instance of <see cref="TwitcherApplication"/></summary>
     /// <param name="clientId">Id of the application</param>
@@ -63,7 +63,7 @@ public class TwitcherAPICollection
     /// <returns><paramref name="api"/></returns>
     public async Task<TwitcherAPI> AddAPI(string name, TwitcherAPI api)
     {
-        api.TokenRefreshed += (s, e) => TokenRefreshed?.Invoke(this, new APITokenRefreshedArgs(name, e.AccessToken, e.RefreshToken, e.UserId));
+        api.OnTokenRefreshed += (s, e) => OnTokenRefreshed?.Invoke(this, new APITokenRefreshedArgs(name, e.AccessToken, e.RefreshToken, e.UserId));
 
         await api.Validate();
 

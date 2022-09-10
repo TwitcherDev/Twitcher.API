@@ -45,7 +45,7 @@ public class TwitcherAPI
     }
 
     /// <summary>Invoked when the token has been changed, an alternative way to save tokens</summary>
-    public event EventHandler<TokenRefreshedArgs>? TokenRefreshed;
+    public event EventHandler<TokenRefreshedArgs>? OnTokenRefreshed;
 
     /// <summary>Create an instance of <see cref="TwitcherAPI"/> using access and refresh tokens pair</summary>
     /// <param name="tokens">Access and refresh tokens in 'access:refresh' format</param>
@@ -170,7 +170,7 @@ public class TwitcherAPI
             ExpiresIn = DateTime.UtcNow.AddSeconds(data.ExpiresIn);
             IsRefreshed = true;
             _isValidated = true;
-            TokenRefreshed?.Invoke(this, new TokenRefreshedArgs(AccessToken, RefreshToken, UserId!));
+            OnTokenRefreshed?.Invoke(this, new TokenRefreshedArgs(AccessToken, RefreshToken, UserId!));
         }
     }
 

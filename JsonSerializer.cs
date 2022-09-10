@@ -27,6 +27,8 @@ internal class TwitcherJsonSerializer : IRestSerializer
         settings.Converters.Add(new StringEnumConverter<VideoTimePeriod>(VideoTimePeriod.All, false));
         settings.Converters.Add(new StringEnumConverter<VideoType>(VideoType.Upload, false));
         settings.Converters.Add(new StringEnumConverter<ViewableType>(ViewableType.Public, false));
+        settings.Converters.Add(new StringEnumConverter<SoundtrackContentType>(SoundtrackContentType.None, true));
+        settings.Converters.Add(new StringEnumConverter<PredictionStatus>(PredictionStatus.None, true));
         //settings.Converters.Add(new StringEnumConverter(new SnakeStrategy()));
         return settings;
     }

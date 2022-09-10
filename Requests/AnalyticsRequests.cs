@@ -59,7 +59,7 @@ public static class AnalyticsRequests
 
         var response = await api.APIRequest<DataResponse<ExtensionAnalyticsResponseBody[]>>(request);
 
-        return response.Data!.Data!.FirstOrDefault()!;
+        return response.Data!.Data.Single();
     }
     #endregion
 
@@ -119,7 +119,7 @@ public static class AnalyticsRequests
 
         var response = await api.APIRequest<DataResponse<GameAnalyticsResponseBody[]>>(request);
 
-        return response.Data!.Data!.FirstOrDefault()!;
+        return response.Data!.Data.Single();
     }
     #endregion
 }

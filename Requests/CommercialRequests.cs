@@ -28,6 +28,6 @@ public static class CommercialRequests
 
         var response = await api.APIRequest<DataResponse<StartCommercialResponseBody[]>>(request);
 
-        return response.Data!.Data!.FirstOrDefault()!;
+        return response.Data!.Data.Single();
     }
 }

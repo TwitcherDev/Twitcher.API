@@ -2,7 +2,7 @@
 
 public enum ReasonType
 {
+    Other,
     Spam,
-    Harassment,
-    Other
+    Harassment
 }

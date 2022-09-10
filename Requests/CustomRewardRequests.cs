@@ -53,7 +53,7 @@ public static class CustomRewardRequests
             .AddBody(body);
 
         var response = await api.APIRequest<DataResponse<CustomRewardResponseBody[]>>(request);
-        return response.Data!.Data!.FirstOrDefault()!;
+        return response.Data!.Data.Single();
     }
 
     /// <summary>Deletes a Custom Reward on a channel.
@@ -154,7 +154,7 @@ public static class CustomRewardRequests
             .AddBody(body);
 
         var response = await api.APIRequest<DataResponse<CustomRewardResponseBody[]>>(request);
-        return response.Data!.Data!.FirstOrDefault()!;
+        return response.Data!.Data.Single();
     }
     #endregion
 

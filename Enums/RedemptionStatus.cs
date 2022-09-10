@@ -4,6 +4,5 @@ public enum RedemptionStatus
 {
     Unfulfilled,
     Fulfilled,
-    Canceled,
-    TestUpper
+    Canceled
 }

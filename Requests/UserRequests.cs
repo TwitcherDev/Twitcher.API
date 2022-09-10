@@ -41,7 +41,7 @@ public static class UserRequests
             request.AddQueryParameter("description", description);
 
         var response = await api.APIRequest<DataResponse<UserResponseBody[]>>(request);
-        return response.Data!.Data!.FirstOrDefault()!;
+        return response.Data!.Data.Single();
     }
 
     /// <summary>Gets information on follow relationships between two Twitch users. At minimum, <paramref name="fromId"/> or <paramref name="toId"/> must be provided for a query to be valid</summary>

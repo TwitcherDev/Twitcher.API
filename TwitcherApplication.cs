@@ -5,65 +5,50 @@ namespace Twitcher.API;
 /// <summary>Combines tools for creating, storing, and working with <see cref="TwitcherAPI"/> in the application</summary>
 public class TwitcherApplication
 {
+    private readonly StateCollection? _states;
+    private readonly TwitcherAPICollection? _collection;
     private readonly ILoggerFactory? _loggerFactory;
     private readonly ILogger? _logger;
-
-    private StateCollection? _states;
-    private TwitcherAPICollection? _collection;
 
     /// <summary>Id of the application</summary>
     public string ClientId { get; }
     /// <summary>Secret of the application</summary>
     public string ClientSecret { get; }
 
-    /// <summary>Managing <see cref="TwitcherAPI"/> instances in the application for constant access without creating unnecessary instances. Use <see cref="UseAPICollection"/> for enable</summary>
-    public TwitcherAPICollection Collection => _collection ?? throw new NotSupportedException($"Call {nameof(UseAPICollection)} for enable {nameof(Collection)}");
+    /// <summary>Managing <see cref="TwitcherAPI"/> instances in the application for constant access without creating unnecessary instances</summary>
+    public TwitcherAPICollection Collection => _collection ??
+            throw new NotSupportedException($"Not enabled. Use {nameof(TwitcherApplicationBuilder.UseAPICollection)} in builder for enable");
 
-    /// <summary>Create an instance of <see cref="TwitcherApplication"/></summary>
-    /// <param name="clientId">Id of the application</param>
-    /// <param name="clientSecret">Secret of the application</param>
-    /// <param name="loggerFactory">ILoggerFactory for logging</param>
-    public TwitcherApplication(string clientId, string clientSecret, ILoggerFactory? loggerFactory = null)
+    internal TwitcherApplication(string clientId, string clientSecret, StateCollection? stateCollection, TwitcherAPICollection? twitcherAPICollection, ILoggerFactory? loggerFactory = null, ILogger? logger = null)
     {
+        _states = stateCollection;
+        _collection = twitcherAPICollection;
         _loggerFactory = loggerFactory;
-        if (_loggerFactory != default)
-            _logger = _loggerFactory.CreateLogger<TwitcherApplication>();
+        _logger = logger ?? _loggerFactory?.CreateLogger<TwitcherApplication>();
 
         ClientId = clientId;
         ClientSecret = clientSecret;
     }
 
-    /// <summary>Enable <see cref="GenerateState"/> and <see cref="AuthorizeCode(string, string, string)"/></summary>
-    /// <param name="stateLiveTime">Lifetime of every state, default: 24 hours</param>
-    /// <param name="statesLimit">Maximum number of unused states, default: 1000</param>
-    /// <param name="stateLength">Length of states, dafault: 32</param>
-    public void UseAuthorizeStates(TimeSpan? stateLiveTime = default, int statesLimit = 1000, int stateLength = 32)
-    {
-        if (_states != null)
-            throw new NotSupportedException($"{nameof(StateCollection)} already in use");
-
-        _states = new StateCollection(stateLiveTime ?? TimeSpan.FromHours(24), statesLimit, stateLength);
-    }
-
-    /// <summary>Generate randomly state for secure authorization. Call <see cref="UseAuthorizeStates"/> to enable</summary>
+    /// <summary>Generate randomly state for secure authorization</summary>
     /// <returns>New state</returns>
     /// <exception cref="NullReferenceException"></exception>
     public string GenerateState()
     {
         if (_states == default)
-            throw new NotSupportedException($"You cannot use {nameof(GenerateState)} without {nameof(UseAuthorizeStates)}");
+            throw new NotSupportedException($"Not enabled. Use {nameof(TwitcherApplicationBuilder.UseAuthorizeStates)} in builder for enable");
         var state = _states.CreateState();
         _logger?.LogTrace("State created: {state}", state);
         return state;
     }
 
-    /// <summary>Creates a link to generate a new token using Authorization code grant flow. Adds random state, if <see cref="UseAuthorizeStates"/> was called</summary>
+    /// <summary>Creates a link to generate a new token using Authorization code grant flow. Adds random state</summary>
     /// <param name="redirectUri">Redirect uri</param>
     /// <param name="scopes">Scopes</param>
     /// <returns>Created uri</returns>
     public string GenerateAuthorizeLink(string redirectUri, IEnumerable<string> scopes) => GenerateAuthorizeLink(redirectUri, string.Join(' ', scopes));
 
-    /// <summary>Creates a link to generate a new token using Authorization code grant flow. Adds random state, if <see cref="UseAuthorizeStates"/> was called</summary>
+    /// <summary>Creates a link to generate a new token using Authorization code grant flow. Adds random state</summary>
     /// <param name="redirectUri">Redirect uri</param>
     /// <param name="scopes">Scopes separated by a space</param>
     /// <returns>Created uri</returns>
@@ -74,7 +59,7 @@ public class TwitcherApplication
         return $"https://id.twitch.tv/oauth2/authorize?response_type=code&client_id={ClientId}&redirect_uri={redirectUri}&scope={scopes}";
     }
 
-    /// <summary>Using authorization code grant flow with state for generate new token. Call <see cref="UseAuthorizeStates"/> to enable</summary>
+    /// <summary>Using authorization code grant flow with state for generate new token</summary>
     /// <param name="code">Code</param>
     /// <param name="redirectUri">Redirect uri</param>
     /// <param name="state">State that was generated by this application</param>
@@ -84,7 +69,7 @@ public class TwitcherApplication
     public Task<TwitcherAPI> AuthorizeCode(string code, string redirectUri, string state)
     {
         if (_states == default)
-            throw new NotSupportedException($"You cannot use {nameof(AuthorizeCode)} with state without {nameof(UseAuthorizeStates)}");
+            throw new NotSupportedException($"Not enabled. Use {nameof(TwitcherApplicationBuilder.UseAuthorizeStates)} in builder for enable");
 
         if (!_states.PassingState(state))
         {
@@ -104,7 +89,7 @@ public class TwitcherApplication
     /// <exception cref="TwitchErrorException"></exception>
     public Task<TwitcherAPI> AuthorizeCode(string code, string redirectUri)
     {
-        return TwitcherAPI.AuthorizeCode(code, redirectUri, ClientId, ClientSecret, _loggerFactory?.CreateLogger<TwitcherAPI>());
+        return TwitcherAPI.AuthorizeCode(code, redirectUri, ClientId, ClientSecret, _loggerFactory?.CreateLogger<TwitcherAPI>() ?? _logger);
     }
 
     /// <summary>Creates a new instance of the <see cref="TwitcherAPI"/> and validates it</summary>
@@ -113,7 +98,7 @@ public class TwitcherApplication
     /// <exception cref="TwitchErrorException"></exception>
     public Task<TwitcherAPI> CreateAPI(string tokens)
     {
-        var api = new TwitcherAPI(tokens, ClientId, ClientSecret, _loggerFactory?.CreateLogger<TwitcherAPI>());
+        var api = new TwitcherAPI(tokens, ClientId, ClientSecret, _loggerFactory?.CreateLogger<TwitcherAPI>() ?? _logger);
         return ValidateAPI(api);
     }
 
@@ -124,7 +109,7 @@ public class TwitcherApplication
     /// <exception cref="TwitchErrorException"></exception>
     public Task<TwitcherAPI> CreateAPI(string access, string refresh)
     {
-        var api = new TwitcherAPI(access, refresh, ClientId, ClientSecret, _loggerFactory?.CreateLogger<TwitcherAPI>());
+        var api = new TwitcherAPI(access, refresh, ClientId, ClientSecret, _loggerFactory?.CreateLogger<TwitcherAPI>() ?? _logger);
         return ValidateAPI(api);
     }
 
@@ -132,14 +117,5 @@ public class TwitcherApplication
     {
         await api.Validate();
         return api;
-    }
-
-    /// <summary>Enable <see cref="Collection"/> to manage <see cref="TwitcherAPI"/> instances in the application for constant access without creating unnecessary instances</summary>
-    public void UseAPICollection()
-    {
-        if (_collection != null)
-            throw new NotSupportedException($"{nameof(TwitcherAPICollection)} already in use");
-
-        _collection = new TwitcherAPICollection(ClientId, ClientSecret, _loggerFactory);
     }
 }

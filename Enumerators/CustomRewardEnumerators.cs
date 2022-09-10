@@ -14,7 +14,7 @@ public static class CustomRewardEnumerators
     /// <param name="status">Filters the paginated Custom Reward Redemption objects for redemptions with the matching status</param>
     /// <param name="sort">Sort order of redemptions</param>
     /// <param name="first">Number of results to be returned per page. Limit: 50</param>
-    /// <returns>An enumerator that lists all redemptions, requesting a new page every <paramref name="first"/> redemtions</returns>
+    /// <returns>An enumerator that enumerates all redemptions, requesting a new page every <paramref name="first"/> redemtions</returns>
     /// <exception cref="NotValidatedException"></exception>
     /// <exception cref="TwitchErrorException"></exception>
     public static async IAsyncEnumerable<CustomRewardRedemptionResponseBody> EnumerateCustomRewardRedemptions(this TwitcherAPI api, string broadcasterId, Guid rewardId, RedemptionStatus status, SortOrder sort = SortOrder.Oldest, int first = 50)
