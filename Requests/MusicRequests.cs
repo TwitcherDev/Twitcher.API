@@ -1,10 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics.Metrics;
+﻿namespace Twitcher.API.Requests;
 
-namespace Twitcher.API.Requests;
-
-/// <summary>A class with extension methods for requesting soundtracks</summary>
-public static class SoundtrackRequests
+/// <summary>Extension methods with music requests</summary>
+public static class MusicRequests
 {
     /// <summary>Gets the Soundtrack track that the broadcaster is playing</summary>
     /// <param name="api">The instance of the api that should request</param>

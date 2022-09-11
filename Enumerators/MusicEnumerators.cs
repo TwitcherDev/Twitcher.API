@@ -2,8 +2,8 @@
 
 namespace Twitcher.API.Enumerators;
 
-/// <summary>A class with extension methods for requesting soundtracks page by page</summary>
-public static class SoundtrackEnumerators
+/// <summary>Extension methods with music enumerators</summary>
+public static class MusicEnumerators
 {
     /// <summary>Enumerates the tracks of a Soundtrack playlist.
     /// Automatically requesting a new page when overriding</summary>

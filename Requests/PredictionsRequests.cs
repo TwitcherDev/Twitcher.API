@@ -1,7 +1,7 @@
 ﻿namespace Twitcher.API.Requests;
 
-/// <summary>Extension methods with prediction requests</summary>
-public static class PredictionRequests
+/// <summary>Extension methods with predictions requests</summary>
+public static class PredictionsRequests
 {
     /// <summary>Get information about all Channel Points Predictions or specific Channel Points Predictions for a Twitch channel. Results are ordered by most recent, so it can be assumed that the currently active or locked Prediction will be the first item.
     /// Required scope: '<inheritdoc cref="Scopes.ChannelReadPredictions"/>' or '<inheritdoc cref="Scopes.ChannelManagePredictions"/>'</summary>
@@ -16,22 +16,17 @@ public static class PredictionRequests
     public static async Task<DataPaginationResponse<PointsPrediction[]>> GetPredictions(this TwitcherAPI api, string broadcasterId, int first = 20, string? after = null)
     {
         ArgumentNullException.ThrowIfNull(api);
-        ArgumentNullException.ThrowIfNull(broadcasterId);
 
         var request = new RestRequest("helix/predictions", Method.Get)
-            .AddQueryParameter("broadcaster_id", broadcasterId);
-
-        if (first != 20)
-            request.AddQueryParameter("first", first);
-
-        if (after != null)
-            request.AddQueryParameter("after", after);
+            .AddQueryParameterNotNull("broadcaster_id", broadcasterId)
+            .AddQueryParameterDefault("first", first, 20)
+            .AddQueryParameterDefault("after", after);
 
         var response = await api.APIRequest<DataPaginationResponse<PointsPrediction[]>>(request);
         return response.Data!;
     }
 
-    /// <summary>Get information about Channel Points Prediction by id.
+    /// <summary>Get information about Channel Points Prediction by <paramref name="id"/>.
     /// Required scope: '<inheritdoc cref="Scopes.ChannelReadPredictions"/>' or '<inheritdoc cref="Scopes.ChannelManagePredictions"/>'</summary>
     /// <param name="api">The instance of the api that should request</param>
     /// <param name="broadcasterId">The broadcaster running Predictions. Must match the User ID in <paramref name="api"/></param>
@@ -43,21 +38,20 @@ public static class PredictionRequests
     public static async Task<PointsPrediction?> GetPredictions(this TwitcherAPI api, string broadcasterId, Guid id)
     {
         ArgumentNullException.ThrowIfNull(api);
-        ArgumentNullException.ThrowIfNull(broadcasterId);
 
         var request = new RestRequest("helix/predictions", Method.Get)
-            .AddQueryParameter("broadcaster_id", broadcasterId)
+            .AddQueryParameterNotNull("broadcaster_id", broadcasterId)
             .AddQueryParameter("id", id);
 
-        var response = await api.APIRequest<DataResponse<PointsPrediction[]>>(request);
-        return response.Data!.Data.SingleOrDefault();
+        var response = await api.APIRequest<DataResponse<PointsPrediction[]?>>(request);
+        return response.Data!.Data?.SingleOrDefault();
     }
 
-    /// <summary>Get information about Channel Points Prediction by id.
+    /// <summary>Get information about Channel Points Predictions by <paramref name="ids"/>.
     /// Required scope: '<inheritdoc cref="Scopes.ChannelReadPredictions"/>' or '<inheritdoc cref="Scopes.ChannelManagePredictions"/>'</summary>
     /// <param name="api">The instance of the api that should request</param>
     /// <param name="broadcasterId">The broadcaster running Predictions. Must match the User ID in <paramref name="api"/></param>
-    /// <param name="ids">IDs of a Predictions. Cannot be empty. Maximum: 100</param>
+    /// <param name="ids">IDs of Predictions. Cannot be empty. Maximum: 100</param>
     /// <returns>Response</returns>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="NotValidatedException"></exception>
@@ -65,23 +59,13 @@ public static class PredictionRequests
     public static async Task<PointsPrediction[]> GetPredictions(this TwitcherAPI api, string broadcasterId, IEnumerable<Guid> ids)
     {
         ArgumentNullException.ThrowIfNull(api);
-        ArgumentNullException.ThrowIfNull(broadcasterId);
-        ArgumentNullException.ThrowIfNull(ids);
 
         var request = new RestRequest("helix/predictions", Method.Get)
-            .AddQueryParameter("broadcaster_id", broadcasterId);
+            .AddQueryParameterNotNull("broadcaster_id", broadcasterId)
+            .AddQueryParametersNotEmpty("id", ids);
 
-        var isAny = false;
-        foreach (var id in ids)
-        {
-            request.AddQueryParameter("id", id);
-            isAny = true;
-        }
-        if (!isAny)
-            throw new ArgumentException("Cannot be empty", nameof(ids));
-
-        var response = await api.APIRequest<DataResponse<PointsPrediction[]>>(request);
-        return response.Data!.Data;
+        var response = await api.APIRequest<DataResponse<PointsPrediction[]?>>(request);
+        return response.Data!.Data ?? Array.Empty<PointsPrediction>();
     }
 
     /// <summary>Create a Channel Points Prediction for a specific Twitch channel.
@@ -117,10 +101,9 @@ public static class PredictionRequests
     public static async Task<PointsPrediction> CreatePrediction(this TwitcherAPI api, CreatePredictionBody body)
     {
         ArgumentNullException.ThrowIfNull(api);
-        ArgumentNullException.ThrowIfNull(body);
 
         var request = new RestRequest("helix/predictions", Method.Post)
-            .AddBody(body);
+            .AddBodyNotNull(body);
 
         var response = await api.APIRequest<DataResponse<PointsPrediction[]>>(request);
         return response.Data!.Data.Single();
@@ -142,7 +125,7 @@ public static class PredictionRequests
         ArgumentNullException.ThrowIfNull(api);
         ArgumentNullException.ThrowIfNull(broadcasterId);
 
-        var request = new RestRequest("helix/predictions", Method.Post)
+        var request = new RestRequest("helix/predictions", Method.Patch)
             .AddBody(new EndPredictionBody(broadcasterId, id, status, winningOutcomeId));
 
         var response = await api.APIRequest<DataResponse<PointsPrediction[]>>(request);

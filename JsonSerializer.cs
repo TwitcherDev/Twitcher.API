@@ -1,5 +1,7 @@
 ﻿using Newtonsoft.Json.Serialization;
 using RestSharp.Serializers;
+using System.Globalization;
+using System.Runtime.Serialization;
 using System.Text;
 
 namespace Twitcher.API;
@@ -29,6 +31,7 @@ internal class TwitcherJsonSerializer : IRestSerializer
         settings.Converters.Add(new StringEnumConverter<ViewableType>(ViewableType.Public, false));
         settings.Converters.Add(new StringEnumConverter<SoundtrackContentType>(SoundtrackContentType.None, true));
         settings.Converters.Add(new StringEnumConverter<PredictionStatus>(PredictionStatus.None, true));
+        settings.Converters.Add(new StringEnumConverter<PollStatus>(PollStatus.Invalid, true));
         //settings.Converters.Add(new StringEnumConverter(new SnakeStrategy()));
         return settings;
     }
@@ -77,7 +80,7 @@ internal class DateTimeConverter : JsonConverter<DateTime>
         var str = (string?)reader.Value;
         if (string.IsNullOrEmpty(str))
             return default;
-        return DateTime.Parse(str);
+        return DateTime.Parse(str, styles: DateTimeStyles.AdjustToUniversal);
     }
 
     public override void WriteJson(JsonWriter writer, DateTime value, JsonSerializer serializer)
