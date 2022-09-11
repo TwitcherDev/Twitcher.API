@@ -44,6 +44,7 @@
 	  <Using Include="System.Net" />
 	  <Using Include="Twitcher.API.Enums" />
 	  <Using Include="Twitcher.API.Exceptions" />
+	  <Using Include="Twitcher.API.Linq" />
 	  <Using Include="Twitcher.API.Models" />
 	  <Using Include="Newtonsoft.Json" />
 	  <Using Include="RestSharp" />

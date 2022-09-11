@@ -231,7 +231,7 @@ public class TwitcherAPI
     }
 
     /// <summary>Request to api.twitch.tv with authorization</summary>
-    /// <typeparam name="TResult">Response data type</typeparam>
+    /// <typeparam name="TResult">Response body type</typeparam>
     /// <param name="request">Request</param>
     /// <returns>Response</returns>
     /// <exception cref="NotValidatedException"></exception>

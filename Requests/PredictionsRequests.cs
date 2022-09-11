@@ -19,8 +19,8 @@ public static class PredictionsRequests
 
         var request = new RestRequest("helix/predictions", Method.Get)
             .AddQueryParameterNotNull("broadcaster_id", broadcasterId)
-            .AddQueryParameterDefault("first", first, 20)
-            .AddQueryParameterDefault("after", after);
+            .AddQueryParameterOrDefault("first", first, 20)
+            .AddQueryParameterOrDefault("after", after);
 
         var response = await api.APIRequest<DataPaginationResponse<PointsPrediction[]>>(request);
         return response.Data!;

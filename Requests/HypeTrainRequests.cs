@@ -19,8 +19,8 @@ public static class HypeTrainRequests
 
         var request = new RestRequest("helix/hypetrain/events", Method.Get)
             .AddQueryParameterNotNull("broadcaster_id", broadcasterId)
-            .AddQueryParameterDefault("first", first, 1)
-            .AddQueryParameterDefault("cursor", after);
+            .AddQueryParameterOrDefault("first", first, 1)
+            .AddQueryParameterOrDefault("cursor", after);
 
         var response = await api.APIRequest<DataPaginationResponse<HypeTrainResponseBody[]?>>(request);
         return response.Data!;
