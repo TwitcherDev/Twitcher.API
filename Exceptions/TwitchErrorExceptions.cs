@@ -43,7 +43,13 @@ public class NotFoundException : TwitchErrorException
 /// <summary>429 Too Many Requests status in response</summary>
 public class TooManyRequestsException : TwitchErrorException
 {
-    internal TooManyRequestsException(string? message) : base(429, "Too Many Requests", message) { }
+    /// <summary>Timestamp that identifies when your bucket is reset to full</summary>
+    public DateTime? RateLimitReset { get; }
+
+    internal TooManyRequestsException(string? message, DateTime? rateLimitReset) : base(429, "Too Many Requests", message) 
+    {
+        RateLimitReset = rateLimitReset;
+    }
 }
 
 /// <summary>500-599 status in response: something bad happened on twitch side</summary>

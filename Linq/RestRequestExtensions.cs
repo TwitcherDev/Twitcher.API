@@ -22,6 +22,22 @@ public static class RestRequestExtensions
         return request;
     }
 
+    /// <summary>Adds a query string to the request if <paramref name="value"/> has value</summary>
+    /// <param name="request">Request instance</param>
+    /// <param name="name">Parameter name</param>
+    /// <param name="value">Parameter value</param>
+    public static RestRequest AddQueryParameterOrDefault<T>(this RestRequest request, string name, T? value)
+        where T : struct
+    {
+        Debug.Assert(request != null);
+        Debug.Assert(!string.IsNullOrEmpty(name));
+
+        if (value.HasValue)
+            request.AddQueryParameter(name, value.Value);
+
+        return request;
+    }
+
     /// <summary>Adds a query string to the request if it is not equal to the <paramref name="defaultValue"/></summary>
     /// <param name="request">Request instance</param>
     /// <param name="name">Parameter name</param>
@@ -39,7 +55,7 @@ public static class RestRequestExtensions
         return request;
     }
 
-    /// <summary>Adds a query string to the request</summary>
+    /// <summary>Adds a query string to the request. Throws an exception if <paramref name="value"/> is <see langword="null"/></summary>
     /// <param name="request">Request instance</param>
     /// <param name="name">Parameter name</param>
     /// <param name="value">Parameter value</param>
@@ -56,7 +72,42 @@ public static class RestRequestExtensions
         return request;
     }
 
-    /// <summary>Adds each element of the sequence as a query string to the request. Throws an exception if the sequence does not contain elements</summary>
+    /// <summary>Adds each element of the sequence as a query string to the request or any element is <see langword="null"/></summary>
+    /// <param name="request">Request instance</param>
+    /// <param name="name">Parameter name</param>
+    /// <param name="values">Parameter values</param>
+    /// <exception cref="ArgumentNullException"></exception>
+    public static RestRequest AddQueryParameters(this RestRequest request, string name, IEnumerable<string>? values)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(name);
+
+        if (values is not null)
+            foreach (var value in values)
+                request.AddQueryParameterNotNull(name, value);
+
+        return request;
+    }
+
+    /// <summary>Adds each element of the sequence as a query string to the request</summary>
+    /// <param name="request">Request instance</param>
+    /// <param name="name">Parameter name</param>
+    /// <param name="values">Parameter values</param>
+    /// <exception cref="ArgumentNullException"></exception>
+    public static RestRequest AddQueryParameters<T>(this RestRequest request, string name, IEnumerable<T>? values)
+        where T : struct
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(name);
+
+        if (values is not null)
+            foreach (var value in values)
+                request.AddQueryParameter(name, value);
+
+        return request;
+    }
+
+    /// <summary>Adds each element of the sequence as a query string to the request. Throws an exception if the sequence does not contain elements or any element is <see langword="null"/></summary>
     /// <param name="request">Request instance</param>
     /// <param name="name">Parameter name</param>
     /// <param name="values">Parameter values</param>
@@ -72,7 +123,7 @@ public static class RestRequestExtensions
         var isAny = false;
         foreach (var value in values)
         {
-            request.AddQueryParameter(name, value);
+            request.AddQueryParameterNotNull(name, value);
             isAny = true;
         }
         if (!isAny)
@@ -91,9 +142,8 @@ public static class RestRequestExtensions
     public static RestRequest AddQueryParametersNotEmpty<T>(this RestRequest request, string name, IEnumerable<T> values, [CallerArgumentExpression(nameof(values))] string? paramName = null)
         where T : struct
     {
-        Debug.Assert(request is not null);
-        Debug.Assert(!string.IsNullOrEmpty(name));
-
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(values, paramName);
 
         var isAny = false;
@@ -108,7 +158,7 @@ public static class RestRequestExtensions
         return request;
     }
 
-    /// <summary>Adds a body parameter to the request</summary>
+    /// <summary>Adds a body parameter to the request. Throws an exception if <paramref name="body"/> is <see langword="null"/></summary>
     /// <param name="request">Request instance</param>
     /// <param name="body">Object to be used as the request body, or string for plain content</param>
     /// <param name="paramName">The name of <paramref name="body"/></param>

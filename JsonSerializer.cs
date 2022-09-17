@@ -18,7 +18,7 @@ internal class TwitcherJsonSerializer : IRestSerializer
         settings.Converters.Add(new DateTimeConverter());
         settings.Converters.Add(new StringEnumConverter<BroadcasterType>(BroadcasterType.None, false));
         settings.Converters.Add(new StringEnumConverter<CheermoteType>(CheermoteType.None, false));
-        settings.Converters.Add(new StringEnumConverter<ExtensionType>(ExtensionType.Component, false));
+        settings.Converters.Add(new StringEnumConverter<ExtensionType>(ExtensionType.None, false));
         settings.Converters.Add(new StringEnumConverter<LeaderboardTimePeriod>(LeaderboardTimePeriod.All, false));
         settings.Converters.Add(new StringEnumConverter<ReasonType>(ReasonType.Other, false));
         settings.Converters.Add(new StringEnumConverter<RedemptionStatus>(RedemptionStatus.Unfulfilled, true));
@@ -32,6 +32,11 @@ internal class TwitcherJsonSerializer : IRestSerializer
         settings.Converters.Add(new StringEnumConverter<SoundtrackContentType>(SoundtrackContentType.None, true));
         settings.Converters.Add(new StringEnumConverter<PredictionStatus>(PredictionStatus.None, true));
         settings.Converters.Add(new StringEnumConverter<PollStatus>(PollStatus.Invalid, true));
+        settings.Converters.Add(new StringEnumConverter<EmoteType>(EmoteType.None, false));
+        settings.Converters.Add(new StringEnumConverter<CodeStatus>(CodeStatus.None, false));
+        settings.Converters.Add(new StringEnumConverter<FulfillmentStatus>(FulfillmentStatus.None, true));
+        settings.Converters.Add(new StringEnumConverter<UpdateDropsEntitlementsStatus>(UpdateDropsEntitlementsStatus.None, true));
+        settings.Converters.Add(new StringEnumConverter<RedeemCodeStatus>(RedeemCodeStatus.None, true));
         //settings.Converters.Add(new StringEnumConverter(new SnakeStrategy()));
         return settings;
     }

@@ -18,6 +18,9 @@ public static class Scopes
     /// <summary>channel:manage:broadcast</summary>
     public static string ChannelManageBroadcast => "channel:manage:broadcast";
 
+    /// <summary>channel:read:charity</summary>
+    public static string ChannelReadCharity => "channel:read:charity";
+
     /// <summary>channel:manage:extensions</summary>
     public static string ChannelManageExtensions => "channel:manage:extensions";
 

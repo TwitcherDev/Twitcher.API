@@ -2,6 +2,8 @@
 
 public enum ExtensionType
 {
+    /// <summary>None</summary>
+    None,
     Component,
     Mobile,
     Panel,

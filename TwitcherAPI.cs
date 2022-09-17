@@ -128,7 +128,7 @@ public class TwitcherAPI
         if (!response.IsSuccessful)
         {
             var error = _idClient.Deserialize<ErrorResponse>(response).Data;
-            throw GenerateTwitchErrorException(response.StatusCode, error);
+            throw GenerateTwitchErrorException(response, error);
         }
 
         var data = _idClient.Deserialize<AuthorizationCodeResponseBody>(response).Data;
@@ -158,7 +158,7 @@ public class TwitcherAPI
         if (!response.IsSuccessful)
         {
             var error = _idClient.Deserialize<ErrorResponse>(response).Data;
-            throw GenerateTwitchErrorException(response.StatusCode, error);
+            throw GenerateTwitchErrorException(response, error);
         }
 
         var data = _idClient.Deserialize<RefreshResponseBody>(response).Data;
@@ -194,7 +194,7 @@ public class TwitcherAPI
         if (!response.IsSuccessful)
         {
             var error = _idClient.Deserialize<ErrorResponse>(response).Data;
-            throw GenerateTwitchErrorException(response.StatusCode, error);
+            throw GenerateTwitchErrorException(response, error);
         }
 
         var data = _idClient.Deserialize<ValidateResponseBody>(response).Data;
@@ -226,24 +226,17 @@ public class TwitcherAPI
         if (!response.IsSuccessful)
         {
             var error = _idClient.Deserialize<ErrorResponse>(response).Data;
-            throw GenerateTwitchErrorException(response.StatusCode, error);
+            throw GenerateTwitchErrorException(response, error);
         }
     }
 
-    /// <summary>Request to api.twitch.tv with authorization</summary>
-    /// <typeparam name="TResult">Response body type</typeparam>
-    /// <param name="request">Request</param>
-    /// <returns>Response</returns>
     /// <exception cref="NotValidatedException"></exception>
     /// <exception cref="TwitchErrorException"></exception>
-    public async Task<RestResponse<TResult>> APIRequest<TResult>(RestRequest request) => _apiClient.Deserialize<TResult>(await APIRequest(request));
+    internal async Task<RestResponse<TResult>> APIRequest<TResult>(RestRequest request) => _apiClient.Deserialize<TResult>(await APIRequest(request));
 
-    /// <summary>Request to api.twitch.tv with authorization</summary>
-    /// <param name="request">Request</param>
-    /// <returns>Response</returns>
     /// <exception cref="NotValidatedException"></exception>
     /// <exception cref="TwitchErrorException"></exception>
-    public async Task<RestResponse> APIRequest(RestRequest request)
+    internal async Task<RestResponse> APIRequest(RestRequest request)
     {
         if (!_isValidated)
             throw new NotValidatedException();
@@ -251,7 +244,9 @@ public class TwitcherAPI
         request.AddHeader("Client-Id", _clientId);
         request.AddHeader("Authorization", "Bearer " + AccessToken);
 
-        var uri = _apiClient.BuildUri(request);
+        Uri? uri = null;
+        if (_logger != null)
+            uri = _apiClient.BuildUri(request);
 
         _logger?.LogTrace("User '{id}' api request {method} {uri}", UserId, request.Method, uri);
         var response = await _apiClient.ExecuteAsync(request);
@@ -268,31 +263,34 @@ public class TwitcherAPI
         if (!response.IsSuccessful)
         {
             var error = _apiClient.Deserialize<ErrorResponse>(response).Data;
-            throw GenerateTwitchErrorException(response.StatusCode, error);
+            throw GenerateTwitchErrorException(response, error);
         }
         return response;
     }
 
-    private static TwitchErrorException GenerateTwitchErrorException(HttpStatusCode status, ErrorResponse? error)
+    private static TwitchErrorException GenerateTwitchErrorException(RestResponse response, ErrorResponse? error)
     {
-        if (status == HttpStatusCode.BadRequest)
+        if (response.StatusCode == HttpStatusCode.BadRequest)
             return new BadRequestException(error?.Message);
 
-        if (status == HttpStatusCode.Unauthorized)
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
             return new UnauthorizedException(error?.Message);
 
-        if (status == HttpStatusCode.Forbidden)
+        if (response.StatusCode == HttpStatusCode.Forbidden)
             return new ForbiddenException(error?.Message);
 
-        if (status == HttpStatusCode.NotFound)
+        if (response.StatusCode == HttpStatusCode.NotFound)
             return new NotFoundException(error?.Message);
 
-        if (status == HttpStatusCode.TooManyRequests)
-            return new TooManyRequestsException(error?.Message);
+        if (response.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            var reset = (double?)response.Headers?.FirstOrDefault(h => h.Name == "Ratelimit-Reset")?.Value;
+            return new TooManyRequestsException(error?.Message, reset.HasValue ? DateTime.UnixEpoch.AddSeconds(reset.Value) : null);
+        }
 
-        if (500 <= (int)status && (int)status < 600)
-            return new ServerErrorException((int)status, error?.Error, error?.Message);
+        if (500 <= (int)response.StatusCode && (int)response.StatusCode < 600)
+            return new ServerErrorException((int)response.StatusCode, error?.Error, error?.Message);
 
-        return new TwitchErrorException((int)status, error?.Error, error?.Message);
+        return new TwitchErrorException((int)response.StatusCode, error?.Error, error?.Message);
     }
 }

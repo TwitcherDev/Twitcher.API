@@ -11,15 +11,8 @@ public static class GoalsRequests
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="NotValidatedException"></exception>
     /// <exception cref="TwitchErrorException"></exception>
-    public static async Task<DataPaginationResponse<HypeTrainResponseBody[]?>> GetCreatorGoals(this TwitcherAPI api, string broadcasterId)
-    {
-        ArgumentNullException.ThrowIfNull(api);
-
-        var request = new RestRequest("helix/goals", Method.Get)
-            .AddQueryParameterNotNull("broadcaster_id", broadcasterId);
-
-        var response = await api.APIRequest<DataPaginationResponse<HypeTrainResponseBody[]?>>(request);
-        //return response.Data!;
-        throw new NotImplementedException();
-    }
+    public static async Task<GoalResponseBody[]> GetCreatorGoals(this TwitcherAPI api, string broadcasterId) =>
+        (await api.APIRequest<DataResponse<GoalResponseBody[]?>>("helix/goals", RequestMethod.Get, r => r
+            .AddQueryParameterNotNull("broadcaster_id", broadcasterId)))
+            .Data ?? Array.Empty<GoalResponseBody>();
 }
