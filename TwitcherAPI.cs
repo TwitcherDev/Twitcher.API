@@ -139,7 +139,7 @@ public class TwitcherAPI
     }
 
     /// <summary>Refresh access token</summary>
-    /// <exception cref="NotValidatedException"></exception>
+    /// <exception cref="TokenRevokedException"></exception>
     /// <exception cref="TwitchErrorException"></exception>
     public async Task Refresh()
     {
@@ -158,7 +158,11 @@ public class TwitcherAPI
         if (!response.IsSuccessful)
         {
             var error = _idClient.Deserialize<ErrorResponse>(response).Data;
-            throw GenerateTwitchErrorException(response, error);
+            var exception = GenerateTwitchErrorException(response, error);
+            if (exception.GetType() == typeof(UnauthorizedException) ||
+                exception.GetType() == typeof(BadRequestException))
+                throw new TokenRevokedException(exception);
+            throw exception;
         }
 
         var data = _idClient.Deserialize<RefreshResponseBody>(response).Data;
@@ -175,6 +179,7 @@ public class TwitcherAPI
     }
 
     /// <summary>Validate access token</summary>
+    /// <exception cref="TokenRevokedException"></exception>
     /// <exception cref="TwitchErrorException"></exception>
     public async Task Validate()
     {
@@ -194,7 +199,10 @@ public class TwitcherAPI
         if (!response.IsSuccessful)
         {
             var error = _idClient.Deserialize<ErrorResponse>(response).Data;
-            throw GenerateTwitchErrorException(response, error);
+            var exception = GenerateTwitchErrorException(response, error);
+            if (exception.GetType() == typeof(UnauthorizedException))
+                throw new TokenRevokedException(exception);
+            throw exception;
         }
 
         var data = _idClient.Deserialize<ValidateResponseBody>(response).Data;
@@ -209,6 +217,8 @@ public class TwitcherAPI
     }
 
     /// <summary>Revoke access token</summary>
+    /// <exception cref="NotValidatedException"></exception>
+    /// <exception cref="TokenRevokedException"></exception>
     /// <exception cref="TwitchErrorException"></exception>
     public async Task Revoke()
     {
@@ -226,15 +236,20 @@ public class TwitcherAPI
         if (!response.IsSuccessful)
         {
             var error = _idClient.Deserialize<ErrorResponse>(response).Data;
-            throw GenerateTwitchErrorException(response, error);
+            var exception = GenerateTwitchErrorException(response, error);
+            if (exception.GetType() == typeof(UnauthorizedException))
+                throw new TokenRevokedException(exception);
+            throw exception;
         }
     }
 
     /// <exception cref="NotValidatedException"></exception>
+    /// <exception cref="TokenRevokedException"></exception>
     /// <exception cref="TwitchErrorException"></exception>
     internal async Task<RestResponse<TResult>> APIRequest<TResult>(RestRequest request) => _apiClient.Deserialize<TResult>(await APIRequest(request));
 
     /// <exception cref="NotValidatedException"></exception>
+    /// <exception cref="TokenRevokedException"></exception>
     /// <exception cref="TwitchErrorException"></exception>
     internal async Task<RestResponse> APIRequest(RestRequest request)
     {
@@ -263,7 +278,10 @@ public class TwitcherAPI
         if (!response.IsSuccessful)
         {
             var error = _apiClient.Deserialize<ErrorResponse>(response).Data;
-            throw GenerateTwitchErrorException(response, error);
+            var exception = GenerateTwitchErrorException(response, error);
+            if (exception.GetType() == typeof(UnauthorizedException))
+                throw new TokenRevokedException(exception);
+            throw exception;
         }
         return response;
     }

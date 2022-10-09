@@ -9,6 +9,7 @@ public static class TwitcherAPIExtensions
     /// <param name="method">HTTP method you need to make the request</param>
     /// <param name="parameters">Action to add parameters to the request</param>
     /// <exception cref="NotValidatedException"></exception>
+    /// <exception cref="TokenRevokedException"></exception>
     /// <exception cref="TwitchErrorException"></exception>
     public static Task APIRequest(this TwitcherAPI api, string resource, RequestMethod method, Action<TwitchRequest>? parameters = null)
     {
@@ -25,6 +26,7 @@ public static class TwitcherAPIExtensions
     /// <param name="parameters">Action to add parameters to the request</param>
     /// <returns>Response body</returns>
     /// <exception cref="NotValidatedException"></exception>
+    /// <exception cref="TokenRevokedException"></exception>
     /// <exception cref="TwitchErrorException"></exception>
     /// <exception cref="TwitchEmptyBodyException"></exception>
     public static async Task<TResult> APIRequest<TResult>(this TwitcherAPI api, string resource, RequestMethod method, Action<TwitchRequest>? parameters = null)

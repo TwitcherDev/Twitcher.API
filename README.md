@@ -31,18 +31,18 @@ C# wrapper for [Twitch Helix Endpoints](https://dev.twitch.tv/docs/api/reference
 - [x] Analytics
 - [x] Bits
 - [x] Commercial
-- [ ] Chat
-- [ ] Music
-- [ ] Search
+- [x] Chat
+- [x] Music
+- [x] Search
 - [ ] Schedule
-- [ ] Raids
-- [ ] Polls
-- [ ] Prediction
+- [x] Raids
+- [x] Polls
+- [x] Prediction
 - [ ] Moderation 
 - [ ] Extensions
-- [ ] EventSub
-- [ ] Games
-- [ ] Hype Train
-- [ ] Clips 
+- [x] EventSub
+- [x] Games
+- [x] Hype Train
+- [x] Clips 
 
 

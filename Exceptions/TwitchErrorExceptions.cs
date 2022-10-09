@@ -22,7 +22,7 @@ public class BadRequestException : TwitchErrorException
     internal BadRequestException(string? message) : base(400, "Bad Request", message) { }
 }
 
-/// <summary>401 Unauthorized status in response: token withdrawn by user</summary>
+/// <summary>401 Unauthorized status in response</summary>
 public class UnauthorizedException : TwitchErrorException
 {
     internal UnauthorizedException(string? message) : base(401, "Unauthorized", message) { }
