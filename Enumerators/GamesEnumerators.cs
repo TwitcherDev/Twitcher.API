@@ -5,7 +5,7 @@ namespace Twitcher.API.Enumerators;
 /// <summary>Extension methods with games enumerators</summary>
 public static class GamesEnumerators
 {
-    /// <summary>Enumerates the top games.
+    /// <summary>Enumerates top games.
     /// Automatically requesting a new page when overriding</summary>
     /// <param name="api">The instance of the api that should request</param>
     /// <param name="first">Number of results to be returned per page. Limit: 100</param>
