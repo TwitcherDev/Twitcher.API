@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Authors>Sawer</Authors>
@@ -48,5 +48,9 @@
 	  <Using Include="Twitcher.API.Models" />
 	  <Using Include="Newtonsoft.Json" />
 	  <Using Include="RestSharp" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <Folder Include="EventSubs\" />
   </ItemGroup>
 </Project>
